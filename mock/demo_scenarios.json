@@ -32,11 +32,11 @@
     { "id": "S6", "category": "typical", "lang": "pl",
       "utterance": "(auto) user's GPS starts moving with vehicle HG935",
       "expected_tools": [{ "name": "match_boarded_vehicle", "args": { "lat": "<gps>", "lon": "<gps>" } }],
-      "expected_reply": "Jesteś w linii 12, pojazd HG935. Kupić bilet 15-minutowy?" },
+      "expected_reply": "Jesteś w linii 12, pojazd HG935. Kupić bilet 30-minutowy lub na 1 przejazd, normalny? (destination unknown: ride to the end of the line, 27 min + 3 min margin)" },
 
     { "id": "S7", "category": "high-risk", "lang": "pl",
       "utterance": "Tak, kup bilet",
-      "expected_tools": [{ "name": "prepare_ticket", "args": { "ticket_id": "kmk_15min_n", "side_number": "HG935" } }],
+      "expected_tools": [{ "name": "prepare_ticket", "args": { "ticket_id": "kmk_30min_n", "side_number": "HG935" } }],
       "expected_reply": "Confirmation WITH parameters (template purchase_pl_*). Purchase happens only after an explicit 'tak'. buy_ticket is never called in the same turn as prepare_ticket." },
 
     { "id": "S8", "category": "high-risk", "lang": "pl",

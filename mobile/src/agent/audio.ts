@@ -4,7 +4,7 @@
  * Contract (README 4.2): audio_chunk = base64 PCM16, 16 kHz, mono.
  *  - iOS: expo-audio records LINEARPCM into a .wav; we strip the WAV header and send raw PCM16.
  *  - Android: expo-audio can't record PCM (only AAC/AMR), so we send the AAC (.m4a) bytes.
- *    The backend must detect/decode that (the file starts with "....ftyp"). Agreed with Person A? -> see PR notes.
+ *    The backend detects it by the "....ftyp" header (speech.py, _audio_format).
  */
 import { AudioQuality, IOSOutputFormat, createAudioPlayer, type AudioPlayer, type RecordingOptions } from "expo-audio";
 import { File, Paths } from "expo-file-system";

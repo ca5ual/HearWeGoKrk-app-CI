@@ -1,7 +1,7 @@
-# FRONTEND.md — HearWeGoKrk mobile app (instructions for the coding agent)
+# FRONTEND.md — HearWeGoKrk mobile app (UI spec)
 
-You are building the React Native (Expo) app for **HearWeGoKrk**, a voice-first transit assistant
-for blind people in Kraków. The Trasa and Rozkłady screens use their own simple style, not the dense
+This describes the React Native (Expo) app in `mobile/` for **HearWeGoKrk**, a voice-first transit
+assistant for blind people in Kraków. Keep it in sync with the code when screens change. The Trasa and Rozkłady screens use their own simple style, not the dense
 style of typical transit apps: large type, one idea per row, plain words instead of icon-only chips,
 and labelled values ("Odjazd 13:28", "Wysiądź: Rynek") instead of colour-coded pills.
 Use the HearWeGoKrk name and the tokens below.
@@ -56,7 +56,8 @@ Bottom tabs (labels in Polish, icons + text):
 | **Trasa** | `/route` | Route search + results + route detail |
 | **Rozkłady** | `/departures` | Departures board for nearby / chosen stops |
 
-Header on every tab: screen title on the left, **balance chip** (e.g. `20,14 zł`) and a profile icon on the right.
+Header on every tab: screen title on the left; on the right the **balance chip** (e.g. `20,14 zł`, hidden as
+`•••• zł` without headphones until tapped), the profile/settings icon, and the help button (always last).
 
 When the agent sends a `ui` message, store its data so the matching screen shows it. **Do not navigate automatically**: the user stays on the current screen and opens the result from the "Tekst rozmowy" panel or the tabs.
 
@@ -76,10 +77,12 @@ Icons: plain outline icons from Lucide (`@react-native-vector-icons/lucide`) via
 ### `TalkButton`
 - A large rounded panel in the accent colour that fills the space it is given. States: idle / listening (pulsing border) / thinking (spinner) (while the reply plays it looks idle: "Mów").
 - Haptics: `impactAsync(Medium)` on press, `notificationAsync(Success)` when a reply starts.
-- a11y: role button, label `"Mów do asystenta"`, hint `"Przytrzymaj i mów"`.
+- a11y: role button, label `"Mów do asystenta"`, hint `"Przytrzymaj i mów, albo stuknij, aby zacząć"` (`"Stuknij, aby wysłać"` while listening).
 
 ### `TicketFab`
-- A floating yellow cart button, bottom-right, with an optional black pill to its left: `"Kup bilet · 4,00 zł"`.
+- A floating yellow cart button, bottom-right, on the route screens. It sends "kup bilet" to the agent: the backend
+  picks a ticket that lasts the whole ride and the purchase continues in the 5.7 sheet. An optional black price
+  pill to its left (`"Kup bilet · 6,00 zł"`) shows only with headphones and when a price is passed (no screen passes one yet).
 
 ## 5. Screens
 
@@ -93,7 +96,7 @@ Icons: plain outline icons from Lucide (`@react-native-vector-icons/lucide`) via
 ### 5.2 Route search (`/route`)
 - Heading "Dokąd jedziesz?", with the origin under it ("Z: Twoja lokalizacja · odjazd teraz"). The backend plans from the user's position only.
 - One large destination input and a "Szukaj trasy" button.
-- "Szybki wybór": one-tap buttons for known destinations (Rynek, AGH, Dworzec Główny, Bronowice).
+- "Szybki wybór": one-tap buttons for known destinations (Rynek, AGH, Dworzec Główny, Kampus UJ).
 - A low-floor option card with a switch, and a note that the data is live and voice works too.
 
 ### 5.3 Route results (`/route/results`)
@@ -117,16 +120,24 @@ Icons: plain outline icons from Lucide (`@react-native-vector-icons/lucide`) via
 - Header "Przystanek" + stop name in large type.
 - One input "Zmień przystanek lub wpisz nr linii": a name lists matching stops, digits filter to that line. An active line filter shows "Tylko linia 14" with a "Pokaż wszystkie" button.
 - A segmented control: Wszystkie / Tramwaje / Autobusy.
-- "Najbliższe odjazdy" (refreshed every 30 s): per row, `LineBox` · "→ headsign" + `LowFloorNote` (+ "Opóźniony o 4 min (planowo 15:54)") · on the right "2 min" in large type, the clock time (red if delayed, green if live) and `LiveIndicator`.
+- "Najbliższe odjazdy" (refreshed every 30 s; "Wstrzymaj odświeżanie" pauses it): per row, `LineBox` · "→ headsign" + `LowFloorNote` (+ "Opóźniony o 4 min (planowo 15:54)") · on the right "2 min" in large type, the clock time (red if delayed, green if live) and `LiveIndicator`.
 - a11y label per row: `"Autobus 179 w kierunku Dworzec Główny, za 2 minuty, o 15:58, na żywo, niskopodłogowy"`.
 
 ### 5.6 Tickets — removed
-- No tickets screen or tab. Buying is voice-only ("kup bilet", or the cart `TicketFab` on route screens) and always ends in the 5.7 modal.
+- No tickets screen or tab. Buying is voice-only ("kup bilet", or the cart `TicketFab` on route screens) and always ends in the 5.7 sheet.
 
-### 5.7 Ticket confirmation (modal) — HearWeGoKrk addition
-- Opened by the `pending_confirmation` message.
-- Shows the parameters in large type: ticket name, price (hidden behind "Pokaż kwotę" if `headphones=false`), card label, **vehicle side number**.
-- Two full-width buttons: **Potwierdź** (ticket yellow) and **Anuluj** (outlined). A visible countdown matching `timeout_s`; when it ends, the modal closes with "Nie kupiono biletu".
+### 5.7 Ticket confirmation (bottom sheet) — HearWeGoKrk addition
+- Opened by the `pending_confirmation` message, closed by `pending_cancelled` or the `confirm` haptic.
+- Not a `Modal`: an overlay at the bottom, so the big Mów button behind it stays reachable. Android back = Anuluj.
+- Shows the parameters in large type: ticket name (its length is picked by the backend for the whole ride),
+  **vehicle side number**, price (hidden behind "Pokaż kwotę" unless `show_price`), payment (balance or card).
+- Hands-free answer: after the question has been read out, the phone opens the mic by itself, sends `listening`,
+  and stops recording when the user goes quiet. While the question is read: **"Przerwij i odpowiedz"**;
+  while listening: **"Wyślij odpowiedź"**. A status line says what is happening ("Słucham — powiedz „tak” albo „nie”").
+- Countdown matching `timeout_s`, frozen while the question is read or the answer checked; a vibration at 10 s and 5 s
+  (not spoken: it would land in the open mic). On silence the server asks once more, then cancels ("Nie kupiono biletu").
+- Buttons: **Potwierdź** (ticket yellow, sends "tak"), **Anuluj** (outlined), and **"Potrzebuję więcej czasu"**
+  (`extend_pending`, WCAG 2.2.1; it never confirms).
 
 ### 5.8 Trip in progress — HearWeGoKrk addition
 - Huge text: line + side number ("12 · HG935"), the next stop, and "Wysiadasz za 2 przystanki".
@@ -135,7 +146,7 @@ Icons: plain outline icons from Lucide (`@react-native-vector-icons/lucide`) via
 
 ## 6. Agent → UI payloads
 
-Add this message type to `/ws/voice` (backend sends it right after the tool result):
+The backend sends a `ui` message on `/ws/voice` right after a tool result that has a screen:
 
 ```json
 { "type": "ui", "component": "route_results", "data": { /* plan_route result */ } }
@@ -144,13 +155,12 @@ Add this message type to `/ws/voice` (backend sends it right after the tool resu
 | `component` | Screen | `data` comes from |
 |---|---|---|
 | `route_results` | 5.3 | `plan_route` (`best` + `alternatives`) |
-| `route_detail` | 5.4 | one itinerary from `plan_route` |
 | `departures` | 5.5 | `get_departures` |
-| `ticket_shop` | 5.6 | ticket catalog |
 | `ticket_confirm` | 5.7 | `prepare_ticket` |
-| `trip_live` | 5.8 | `vehicle_status` |
+| `trip_live` | 5.8 | `match_boarded_vehicle`, `set_vehicle`, `vehicle_status`, and the trip monitor (every ~10 s) |
 
-Write a single `renderAgentUI(payload)` switch. Unknown components are ignored, never crashed on.
+`AgentContext` stores the latest `data` per component (`ui`) and the last result (`lastUi`, shown in "Tekst rozmowy").
+Unknown components are ignored, never crashed on.
 
 ## 7. Accessibility checklist (definition of done)
 
@@ -160,7 +170,7 @@ Write a single `renderAgentUI(payload)` switch. Unknown components are ignored, 
 - [ ] Delays are announced once, not on every refresh.
 - [ ] Text survives 200% font scale without clipping.
 - [ ] No information is conveyed by colour only.
-- [ ] Every action that costs money goes through the 5.7 modal.
+- [ ] Every action that costs money goes through the 5.7 sheet.
 
 ### WCAG 2.2 (target: level AA)
 
@@ -179,19 +189,10 @@ The app follows [WCAG 2.2](https://www.w3.org/TR/WCAG22/), applied to a native a
 | 2.5.7 Dragging Movements (AA, new) | No feature needs dragging (the ticket carousel is gone). | — |
 | 2.5.8 Target Size (Minimum) (AA, new) | Every control is ≥ 48×48 dp (WCAG asks for 24). The talk button fills the screen. | `MIN_TOUCH` |
 | 3.2.6 Consistent Help (A, new) | A help button (`circle-help`) is always the last item in the header, on every screen, and opens the Pomoc screen. | `header.tsx`, `app/help.tsx` |
-| 3.3.4 Error Prevention (Financial) (AA) | Every purchase is confirmed in the 5.7 modal or by an explicit spoken "tak". | `money.tsx` |
+| 3.3.4 Error Prevention (Financial) (AA) | Every purchase is confirmed in the 5.7 sheet or by an explicit spoken "tak". | `money.tsx` |
 | 3.3.7 Redundant Entry (A, new) | Trasa keeps the last destination and route; Rozkłady keeps the asked stop. | `route/index.tsx`, `departures.tsx` |
 | 3.3.8 Accessible Authentication (AA, new) | No login or password: nothing to remember or transcribe. | — |
 | 4.1.2 Name, Role, Value (A) | Every control has a Polish label and role; icons are hidden from screen readers. | all screens |
 | 4.1.3 Status Messages (AA) | Notices, connection loss and errors are announced without moving focus. | `a11y.ts` (`useAnnounce`) |
 
 Not covered yet: 2.4.11 Focus Not Obscured and 2.4.7 Focus Visible with a hardware keyboard (not tested), 3.1.1/3.1.2 language of content for screen readers when replies are in English.
-
-## 8. Build order (hackathon)
-
-1. Tokens + `LineBox`, `LowFloorNote`, `LiveIndicator` (with static mock props).
-2. Screen 5.3 route results rendering `plan_route` JSON from the mock.
-3. Voice home 5.1 with the WebSocket hooked up.
-4. Route detail 5.4 with the vehicle row.
-5. Confirmation modal 5.7 + trip-in-progress view 5.8 (needed for the demo).
-6. Departures board 5.5 (nice to have).

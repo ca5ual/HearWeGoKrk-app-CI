@@ -1,13 +1,11 @@
 """
 agent.py — the agent interface + a rule-based FALLBACK brain.
 
-Contract with Person A:
     async def respond(session, text) -> AgentReply
 
-Person A implements `llm_respond` (Parakeet text in -> LLM with tools.tool_schemas_*() ->
-tools.execute(...) for each tool call -> final text) and sets USE_LLM = True.
-If the LLM call raises (no WiFi on stage, rate limit...), we automatically fall back
-to the rule-based brain below, which handles the whole demo script on its own.
+With AGENT=claude, llm_agent.py (Claude tool calling) answers. If that call raises
+(no WiFi on stage, rate limit...), we automatically fall back to the rule-based brain
+below, which handles the whole demo script on its own.
 """
 
 import os
@@ -31,15 +29,11 @@ async def respond(session, text: str) -> AgentReply:
     # Nothing heard (silence, or no speech-to-text yet): ask to repeat, don't spend an LLM call.
     if USE_LLM and text.strip():
         try:
-            return await llm_respond(session, text)
+            import llm_agent  # imported lazily: the rule brain must work without the anthropic package
+            return await llm_agent.respond(session, text)
         except Exception as e:  # never let the demo die on an API error
             print(f"[agent] LLM failed, using fallback: {e!r}")
     return rule_respond(session, text)
-
-
-async def llm_respond(session, text: str) -> AgentReply:
-    import llm_agent  # imported lazily: the rule brain must work without the anthropic package
-    return await llm_agent.respond(session, text)
 
 
 # =========================================================================
@@ -53,6 +47,7 @@ _BOARD = re.compile(r"(wsiad[łl]|jestem w|i'?m on|boarded|got on)", re.I)
 _BUY = re.compile(r"(kup|bilet|ticket|buy)", re.I)
 _SIDE = re.compile(r"(numer boczny|numer pojazdu|pojazd|side number|vehicle)", re.I)
 _DEPART = re.compile(r"(kiedy|nast[eę]pn|odjazd|next|when)", re.I)
+_LATE = re.compile(r"(sp[oó][źz]ni|op[oó][źz]ni|\blate\b|\bdelay)", re.I)
 _REPEAT = re.compile(r"(powt[oó]rz|repeat|say again)", re.I)
 
 # Spoken line names -> line ids. Order matters: longer phrases first.
@@ -81,7 +76,8 @@ def _floor_phrase(session, vehicle: dict) -> str:
     if lf == "full":
         return session.t("niskopodłogowy", "low-floor")
     if lf == "partial":
-        return session.t(vehicle["boarding_hint_pl"], vehicle["boarding_hint_en"])
+        hint = session.t(vehicle["boarding_hint_pl"], vehicle["boarding_hint_en"]).rstrip(".")
+        return hint[:1].lower() + hint[1:]  # read mid-sentence, after a comma
     return session.t("uwaga, wysokie stopnie", "careful, high steps")
 
 
@@ -102,7 +98,8 @@ def _say_route(session, res: dict) -> str:
     return " ".join(parts)
 
 
-def _say_departures(session, res: dict) -> str:
+def _say_departures(session, res: dict, certainty: bool = False) -> str:
+    """certainty: the user asked whether it will be late -> say where the timing comes from."""
     deps = res["departures"]
     if not deps:
         return session.t("Nie widzę teraz żadnych odjazdów.", "I can't see any departures right now.")
@@ -110,9 +107,16 @@ def _say_departures(session, res: dict) -> str:
     mode = (_MODE_PL if session.lang == "pl" else _MODE_EN)[d0["mode"]]
     text = session.t(f"{mode.capitalize()} {d0['line_number']} za {_mins(session, d0['eta_min'])}",
                      f"{mode.capitalize()} {d0['line_number']} in {_mins(session, d0['eta_min'])}")
+    if certainty:
+        live = d0["data_source"] in ("live", "simulated_live")
+        source = (session.t("Według danych na żywo", "According to live data") if live
+                  else session.t("Według rozkładu", "According to the timetable"))
+        text = f"{source}: {text[0].lower()}{text[1:]}"
     if d0["delay_min"]:
         text += session.t(f", ma {_mins(session, d0['delay_min'])} opóźnienia",
                           f", {_mins(session, d0['delay_min'])} late")
+    elif certainty:
+        text += session.t(", bez opóźnienia", ", on time")
     if d0["vehicle"]["low_floor"] == "none":
         nxt = next((d for d in deps[1:] if d["line_id"] == d0["line_id"] and d["vehicle"]["low_floor"] != "none"), None)
         text += session.t(", ale to stary tramwaj z wysokimi stopniami.", ", but it's an old vehicle with high steps.")
@@ -191,9 +195,9 @@ def rule_respond(session, text: str) -> AgentReply:
             session.flags["offer"] = "buy"
             return _remember(session, AgentReply(session.t(
                 f"Jesteś w pojeździe {v['side_number']}"
-                + (f", linia {r['line_number']}" if r["line_number"] else "") + ". Kupić bilet 15-minutowy?",
+                + (f", linia {r['line_number']}" if r["line_number"] else "") + ". ",
                 f"You're in vehicle {v['side_number']}"
-                + (f", line {r['line_number']}" if r["line_number"] else "") + ". Buy a 15-minute ticket?"), out))
+                + (f", line {r['line_number']}" if r["line_number"] else "") + ". ") + _offer_ticket(session), out))
     elif _BOARD.search(t) or (_BUY.search(t) and not session.current_vehicle):
         r = run("match_boarded_vehicle")
         if not r.get("matched"):
@@ -206,20 +210,20 @@ def rule_respond(session, text: str) -> AgentReply:
         if not _BUY.search(t):
             session.flags["offer"] = "buy"
             return _remember(session, AgentReply(session.t(
-                f"Jesteś w linii {r['line_number']}, pojazd {v['side_number']}. Kupić bilet 15-minutowy?",
-                f"You're on line {r['line_number']}, vehicle {v['side_number']}. Buy a 15-minute ticket?"), out))
+                f"Jesteś w linii {r['line_number']}, pojazd {v['side_number']}. ",
+                f"You're on line {r['line_number']}, vehicle {v['side_number']}. ") + _offer_ticket(session), out))
 
     if _BUY.search(t):
-        r = run("prepare_ticket", ticket_id="kmk_15min_n")
+        r = run("prepare_ticket")
         if "error" in r:
             return _remember(session, AgentReply(session.t("Nie mogę teraz przygotować biletu.",
                                                            "I can't prepare a ticket right now."), out))
         return _remember(session, AgentReply(r["confirmation_text"], out))
 
-    if _DEPART.search(t):
+    if _DEPART.search(t) or _LATE.search(t):
         line_id = next((lid for pat, lid in _LINE_WORDS if re.search(pat, t, re.I)), None)
         r = run("get_departures", line_id=line_id)
-        return _remember(session, AgentReply(_say_departures(session, r), out))
+        return _remember(session, AgentReply(_say_departures(session, r, certainty=bool(_LATE.search(t))), out))
 
     # 5) Default: treat the utterance as a destination.
     r = run("plan_route", destination=t)
@@ -233,6 +237,12 @@ def rule_respond(session, text: str) -> AgentReply:
     else:
         msg = _say_route(session, r)
     return _remember(session, AgentReply(msg, out))
+
+
+def _offer_ticket(session) -> str:
+    """'Kupić bilet 30-minutowy…?' with the ticket prepare_ticket would pick for this ride."""
+    t = wallet.pick_ticket(wallet.trip_minutes(session, session.current_vehicle))
+    return session.t(f"Kupić {t['name_pl']}?", f"Buy a {t['name_en']}?")
 
 
 def _remember(session, reply: AgentReply) -> AgentReply:

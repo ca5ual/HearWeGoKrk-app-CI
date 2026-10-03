@@ -91,6 +91,9 @@ export type PreparedTicket = {
   side_number: string | null;
   payment_source: "balance" | "card";
   show_price: boolean;
+  ticket_id: string;
+  trip_min: number | null;
+  covers_trip: boolean;
 };
 
 export type ActiveTicket = {
@@ -114,9 +117,7 @@ export type Wallet = {
 // `ui` messages from /ws/voice (FRONTEND.md section 6).
 export type UiPayload =
   | { component: "route_results"; data: RouteResult }
-  | { component: "route_detail"; data: Itinerary }
   | { component: "departures"; data: DeparturesResult }
-  | { component: "ticket_shop"; data: { tickets: Ticket[] } }
   | { component: "ticket_confirm"; data: PreparedTicket }
   | { component: "trip_live"; data: TripStatus };
 

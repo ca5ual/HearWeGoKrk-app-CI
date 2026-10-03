@@ -1,7 +1,7 @@
 """
 session.py — state of one conversation (one WebSocket connection or one REST test session).
 
-The agent (Person A) and the tools (Person B) both read and write this object,
+The agent and the tools both read and write this object,
 so it is the single place where "what do we know right now" lives:
 language, GPS, headphones, the vehicle the user is in, the pending purchase, etc.
 """
@@ -32,9 +32,10 @@ class Session:
     turn: int = 0                        # incremented on every user utterance
     current_vehicle: str | None = None   # side number of the vehicle the user is in
     target_stop_name: str | None = None  # where the user wants to get off (for announcements)
+    plan: dict | None = None             # {"legs", "start_min"} up to the last ride (ticket length)
     pending: Any = None                  # wallet.PendingAction or None
     flags: dict = field(default_factory=dict)        # small conversational flags (offers, etc.)
-    history: list = field(default_factory=list)      # LLM message history (Person A owns it)
+    history: list = field(default_factory=list)      # LLM message history (llm_agent.py)
     tool_log: list = field(default_factory=list)     # every tool call, for debugging / "log działań"
     timer_task: asyncio.Task | None = None           # confirmation timeout task (WebSocket only)
 
