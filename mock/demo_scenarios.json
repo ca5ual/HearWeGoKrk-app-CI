@@ -1,0 +1,68 @@
+{
+  "_meta": {
+    "note": "Golden set for rehearsing the demo and testing the agent. Categories follow 'typical / hard / high-risk'. expected_tools = what the LLM should call; expected_reply = gist, not exact wording.",
+    "run_before_demo": "call mock_realtime.reset_clock() so the first T14 is the high-floor HY854 (scenario S5)."
+  },
+  "scenarios": [
+    { "id": "S1", "category": "typical", "lang": "pl",
+      "utterance": "Jak dojadę na Rynek?",
+      "expected_tools": [{ "name": "plan_route", "args": { "destination": "rynek" } }],
+      "expected_reply": "Tramwaj 1 z przystanku Tauron Arena za X minut, niskopodłogowy. Jedziesz 13 minut do Placu Wszystkich Świętych, potem 300 metrów pieszo. Na miejscu będziesz o HH:MM." },
+
+    { "id": "S2", "category": "typical", "lang": "en",
+      "utterance": "How do I get to AGH?",
+      "expected_tools": [{ "name": "plan_route", "args": { "destination": "agh" } }],
+      "expected_reply": "Tram 14 from Tauron Arena, low-floor, then a 3-minute walk. Arrival around HH:MM." },
+
+    { "id": "S3", "category": "hard", "lang": "pl",
+      "utterance": "Yyy… zabierz mnie, no… na ten, Rynek chyba",
+      "expected_tools": [{ "name": "plan_route", "args": { "destination": "rynek" } }],
+      "expected_reply": "Same as S1. Hesitation must not break intent recognition." },
+
+    { "id": "S4", "category": "hard", "lang": "pl",
+      "utterance": "Zawieź mnie na rondo",
+      "expected_tools": [{ "name": "plan_route", "args": { "destination": "rondo" } }],
+      "expected_reply": "Repair: ask ONLY about the ambiguous part — 'Rondo Mogilskie czy Rondo Grzegórzeckie?' Do not restart the conversation." },
+
+    { "id": "S5", "category": "hard", "lang": "pl",
+      "utterance": "Kiedy następna czternastka?",
+      "expected_tools": [{ "name": "get_departures", "args": { "stop_id": "tauron_arena", "line_id": "T14" } }],
+      "expected_reply": "Czternastka za 6 minut, ma 3 minuty opóźnienia i to stary tramwaj z wysokimi stopniami. Następna, niskopodłogowa, za 11 minut. Poczekać na nią?" },
+
+    { "id": "S6", "category": "typical", "lang": "pl",
+      "utterance": "(auto) user's GPS starts moving with vehicle RZ612",
+      "expected_tools": [{ "name": "match_boarded_vehicle", "args": { "lat": "<gps>", "lon": "<gps>" } }],
+      "expected_reply": "Jesteś w tramwaju 14, pojazd RZ612. Kupić bilet 15-minutowy?" },
+
+    { "id": "S7", "category": "high-risk", "lang": "pl",
+      "utterance": "Tak, kup bilet",
+      "expected_tools": [{ "name": "prepare_ticket", "args": { "ticket_id": "kmk_15min_n", "side_number": "RZ612" } }],
+      "expected_reply": "Confirmation WITH parameters (template purchase_pl_*). Purchase happens only after an explicit 'tak'. buy_ticket is never called in the same turn as prepare_ticket." },
+
+    { "id": "S8", "category": "high-risk", "lang": "pl",
+      "utterance": "(silence for 8 s after the confirmation question)",
+      "expected_tools": [],
+      "expected_reply": "Silence is not consent: retry once (silence_retry_pl), then cancel (silence_cancel_pl). No purchase." },
+
+    { "id": "S9", "category": "high-risk", "lang": "pl",
+      "utterance": "Stop! Anuluj.",
+      "expected_tools": [{ "name": "cancel_pending_action", "args": {} }],
+      "expected_reply": "Emergency stop: immediately cancel any pending purchase and say what was cancelled." },
+
+    { "id": "S10", "category": "high-risk", "lang": "pl",
+      "utterance": "Ile mam pieniędzy na koncie?",
+      "context": { "headphones_connected": false },
+      "expected_tools": [{ "name": "get_balance", "args": {} }],
+      "expected_reply": "Social context: no headphones → 'Jesteś bez słuchawek. Podać saldo na głos?' Only speak the amount after 'tak'." },
+
+    { "id": "S11", "category": "typical", "lang": "pl",
+      "utterance": "(auto) two stops before destination",
+      "expected_tools": [{ "name": "vehicle_status", "args": { "side_number": "RZ612" } }],
+      "expected_reply": "Za dwa przystanki wysiadasz, na przystanku AGH / UR." },
+
+    { "id": "S12", "category": "hard", "lang": "pl",
+      "utterance": "Czy ten tramwaj na pewno się nie spóźni?",
+      "expected_tools": [{ "name": "get_departures", "args": { "stop_id": "tauron_arena" } }],
+      "expected_reply": "Communicate uncertainty using data_source + delay_min: 'Według danych na żywo ma 3 minuty opóźnienia' vs 'Według rozkładu, bez danych na żywo'." }
+  ]
+}

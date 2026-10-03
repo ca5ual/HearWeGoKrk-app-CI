@@ -1,0 +1,25 @@
+{
+  "_meta": {
+    "note": "MOCK DATA for HearWeGoKrk demo. Stop names are real Kraków stops, coordinates are approximate. Not an official ZTP/MPK dataset.",
+    "demo_origin": "tauron_arena"
+  },
+  "stops": [
+    { "id": "tauron_arena", "name": "Tauron Arena Kraków Al. Pokoju", "lat": 50.0657, "lon": 19.9895, "modes": ["tram", "bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "rondo_grzegorzeckie", "name": "Rondo Grzegórzeckie", "lat": 50.0585, "lon": 19.9600, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": false },
+    { "id": "hala_targowa", "name": "Hala Targowa", "lat": 50.0590, "lon": 19.9480, "modes": ["tram"], "step_free_access": true, "tactile_paving": false, "voice_departure_board": false },
+    { "id": "starowislna", "name": "Starowiślna", "lat": 50.0573, "lon": 19.9442, "modes": ["tram"], "step_free_access": false, "tactile_paving": false, "voice_departure_board": false },
+    { "id": "poczta_glowna", "name": "Poczta Główna", "lat": 50.0607, "lon": 19.9408, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "plac_wszystkich_swietych", "name": "Plac Wszystkich Świętych", "lat": 50.0592, "lon": 19.9383, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "rondo_mogilskie", "name": "Rondo Mogilskie", "lat": 50.0662, "lon": 19.9620, "modes": ["tram", "bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "dworzec_glowny", "name": "Dworzec Główny", "lat": 50.0668, "lon": 19.9455, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "dworzec_glowny_zachod", "name": "Dworzec Główny Zachód", "lat": 50.0675, "lon": 19.9440, "modes": ["bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "teatr_bagatela", "name": "Teatr Bagatela", "lat": 50.0640, "lon": 19.9323, "modes": ["tram"], "step_free_access": true, "tactile_paving": false, "voice_departure_board": false },
+    { "id": "agh_ur", "name": "AGH / UR", "lat": 50.0660, "lon": 19.9205, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
+    { "id": "bronowice_male", "name": "Bronowice Małe", "lat": 50.0815, "lon": 19.8885, "modes": ["tram", "bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true }
+  ],
+  "places": [
+    { "id": "rynek_glowny", "name": "Rynek Główny", "lat": 50.0617, "lon": 19.9373 },
+    { "id": "agh_a0", "name": "AGH, budynek A-0", "lat": 50.0646, "lon": 19.9230 },
+    { "id": "dworzec_glowny_poi", "name": "Dworzec Główny PKP", "lat": 50.0677, "lon": 19.9475 }
+  ]
+}
