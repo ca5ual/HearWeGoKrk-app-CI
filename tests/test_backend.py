@@ -98,13 +98,47 @@ def test_demo_bus_de777_to_rondo_mogilskie():
     assert ride["ride_min"] == 20 and ride["vehicle"]["side_number"] == "DE777"
     assert "Autobus 124" in r["reply_text"]
 
-    assert client.post("/demo/clock", json={"offset_min": 7}).status_code == 200
+    assert client.post("/demo/clock", json={"offset_min": 11}).status_code == 200
     assert client.post("/demo/gps", json={"side_number": "DE777"}).status_code == 200
     r = say("Wsiadłem", sid=r["session_id"])
     assert "DE777" in r["reply_text"] and "30-minutowy" in r["reply_text"]
     r = say("tak", sid=r["session_id"])
     prep = r["tools"][-1]["result"]
     assert prep["side_number"] == "DE777" and prep["trip_min"] < 20 and prep["covers_trip"]
+
+
+@pytest.mark.parametrize("minute", [0, 3, 5])
+def test_demo_bus_has_slack(minute):
+    """Steps 2-3 of the demo take a few minutes: asking up to 5 min after the reset still gives DE777 from Al. Pokoju."""
+    rt.reset_clock(minute)
+    ride = rt.plan_route("rondo mogilskie")["best"]["legs"][1]
+    assert (ride["vehicle"]["side_number"], ride["from"]) == ("DE777", "TAURON Arena Kraków Al. Pokoju")
+
+
+def test_demo_clock_only_goes_forward():
+    assert client.post("/demo/clock", json={"offset_min": 11}).status_code == 200
+    assert client.post("/demo/clock", json={"offset_min": 5}).status_code == 409
+
+
+def test_default_stop_has_departures():
+    """Never a stop without departures: not a line's last stop, not a stop no line serves."""
+    s = Session()
+    for stop_id in ("salwator", "rondo_czyzynskie"):
+        st = rt.STOPS[stop_id]
+        s.lat, s.lon = st["lat"], st["lon"]
+        res = tools.execute(s, "get_departures", {"line_id": "T1"} if stop_id == "salwator" else {}).result
+        assert res["stop_id"] != stop_id and res["departures"], stop_id
+    assert tools.execute(s, "get_departures", {"mode": "autobus"}).result["error"] == "bad_mode"
+
+
+def test_broken_json_keeps_the_old_data(monkeypatch):
+    stops = rt.STOPS
+    real_load = rt._load
+    monkeypatch.setattr(rt, "_load", lambda name: (_ for _ in ()).throw(ValueError("bad json"))
+                        if name == "routes.json" else real_load(name))
+    with pytest.raises(ValueError):
+        rt.reload_data()
+    assert rt.STOPS is stops
 
 
 def test_mock_data_is_consistent():
@@ -238,7 +272,7 @@ def test_ticket_before_boarding_follows_the_plan():
 def test_ticket_on_the_planned_bus_uses_its_live_eta():
     s = _plan_agh()
     bus = s.plan["legs"][-1]["vehicle"]["side_number"]
-    rt.reset_clock(7)  # the planned bus has just left the venue
+    rt.reset_clock(11)  # the planned bus has just left the venue
     eta = next(x["eta_min"] for x in rt.vehicle_status(bus)["remaining_stops"] if x["name"] == "AGH / UR")
     assert wallet.trip_minutes(s, bus) == eta
 
@@ -284,7 +318,7 @@ def test_ticket_on_a_vehicle_off_the_plan_covers_the_end_of_the_line():
 
 def test_explicit_short_ticket_is_flagged():
     s = _plan_agh()
-    rt.reset_clock(7)
+    rt.reset_clock(11)  # on the planned bus
     bus = s.plan["legs"][-1]["vehicle"]["side_number"]
     prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": bus}).result
     assert prep["ticket_id"] == "kmk_15min_n" and prep["covers_trip"] is False
@@ -557,6 +591,6 @@ def test_bus_stops_mock_data():
     assert "muzeum_lotnictwa" in stops_by_id
     assert "rondo_czyzynskie" in stops_by_id
     assert "bus" in stops_by_id["tauron_arena_krakow"]["modes"]
-    assert stops_by_id["tauron_arena_krakow"]["step_free_access"] is True
+    assert stops_by_id["tauron_arena_krakow"]["step_free_access"] is None  # not surveyed: unknown
     assert "bus" in stops_by_id["tauron_wieczysta"]["modes"]
 

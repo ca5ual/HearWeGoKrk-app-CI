@@ -103,7 +103,7 @@ catches broken references after any edit.
 the high-floor RZ105 running 3 min late, and the next one (HY712) is low-floor. That is scenario S5. RZ105 is not
 from TTSS (`"source": "illustrative"`): Kraków's live fleet no longer has fully high-floor trams. The bus 424 fleet
 and the demo bus DE777 are illustrative too; every vehicle marked `ttss` is in `ttss_snapshot.json` (a test checks it).
-The first bus 124 after a reset is **DE777**: it leaves Al. Pokoju at minute 6 and reaches Rondo Mogilskie 20 min later.
+The first bus 124 after a reset is **DE777**: it leaves Al. Pokoju at minute 10 and reaches Rondo Mogilskie 20 min later.
 With a 12-minute offset tram 12 **HG935** is on the road: that's the vehicle the ticket demo boards.
 
 ⚠️ Ticket prices are placeholders (check ztp.krakow.pl).
@@ -178,7 +178,7 @@ Server → client:
 | `GET /tools/schemas` | tool definitions passed to Claude |
 | `POST /agent/text` · `GET /sessions/{id}/log` | talk to the agent without the phone; action log of a session |
 | `POST /demo/reset` (`offset_min`) | restart clock and wallet, clear fake GPS, reset open WebSocket sessions |
-| `POST /demo/clock` (`offset_min`) | jump the clock only; conversations, planned route and wallet stay |
+| `POST /demo/clock` (`offset_min`) | jump the clock forward only; conversations, planned route and wallet stay |
 | `POST /demo/gps` (`side_number` or `lat`+`lon`) · `DELETE /demo/gps` | fake GPS for the stage |
 
 ## 6. Agent behaviour rules (in the system prompt and the rule-based brain)
@@ -199,9 +199,10 @@ Server → client:
 1. Ustawienia → Tryb demo → **Reset demo (start)**. Phone is mirrored and the screen reader is on.
 2. "Jak dojadę na Rynek?" → route, ETA, low-floor.
 3. "Kiedy następna czternastka?" → high-floor warning, then an offer to wait for the next low-floor one.
-4. "Jak dojadę na Rondo Mogilskie?" → "Autobus 124 z przystanku TAURON Arena Kraków Al. Pokoju za 2 minuty, …,
-   niskopodłogowy. Na miejscu o …" (20 min ride, bus DE777).
-5. Tryb demo → **Wsiadam do autobusu DE777 (+7 min)** (moves the clock and fake GPS, keeps the conversation) →
+4. "Jak dojadę na Rondo Mogilskie?" → "Autobus 124 z przystanku TAURON Arena Kraków Al. Pokoju za … minut, …,
+   niskopodłogowy. Na miejscu o …" (20 min ride, bus DE777). Ask it **within 5 minutes of the reset**: after that
+   the walk to Al. Pokoju misses DE777 and the route changes.
+5. Tryb demo → **Wsiadam do autobusu DE777 (+11 min)** (moves the clock and fake GPS, keeps the conversation) →
    "Wsiadłem" → "Jesteś w linii 124, pojazd DE777. Kupić bilet 30-minutowy lub na 1 przejazd, normalny?"
    (19 min left to Rondo Mogilskie + 3 min margin). Without GPS: "Jestem w DE 777".
 6. "Tak" → confirmation with parameters → "Tak" → ticket.

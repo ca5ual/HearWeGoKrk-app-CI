@@ -279,7 +279,7 @@
    "number": "124",
    "mode": "bus",
    "headsign": "Os. Podwawelskie",
-   "first_departure_offset_min": 6,
+   "first_departure_offset_min": 10,
    "headway_min": 15,
    "vehicle_rotation": [
     "DE777",

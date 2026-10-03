@@ -38,10 +38,11 @@ class Tool:
 
 # --- helpers -------------------------------------------------------------
 def _nearest_stop_id(lat: float, lon: float, line_id: str | None = None, mode: str | None = None) -> str:
-    """Nearest stop served by `line_id` (or by any line of `mode`); any stop if neither is given."""
+    """Nearest stop with departures of `line_id` (or of any line of `mode`, or of any line).
+    A line's last stop has no departures, and some stops in stops.json have no line at all."""
     lines = [l for l in provider.LINES.values()
              if (line_id is None or l["id"] == line_id) and (mode is None or l["mode"] == mode)]
-    served = {s["stop"] for l in lines for s in l["stops"]} if (line_id or mode) else set(provider.STOPS)
+    served = {s["stop"] for l in lines for s in l["stops"][:-1]}
     return min((provider.STOPS[i] for i in served),
                key=lambda s: provider._haversine_m(lat, lon, s["lat"], s["lon"]))["id"]
 
@@ -68,6 +69,8 @@ def get_departures(session, stop_id: str | None = None, line_id: str | None = No
         return {"error": "unknown_line", "message": f"No line '{line_id}'. Lines: {', '.join(provider.LINES)}."}
     if line_id:
         mode = None  # the line decides ("tramwaj 124" is still bus 124)
+    elif mode not in (None, "tram", "bus"):
+        return {"error": "bad_mode", "message": f"mode must be 'tram' or 'bus', not '{mode}'."}
     # The nearest stop may not be served by the line asked about (tram 12 leaves from Wieczysta).
     stop_id = stop_id or _nearest_stop_id(*session.location, line_id=line_id, mode=mode)
     if stop_id not in provider.STOPS:

@@ -31,14 +31,15 @@ def _load(name: str) -> dict:
 
 # --- Static data, loaded once at import ---------------------------------
 def reload_data() -> None:
+    """(Re)load the JSON files, e.g. after a hand edit. All files are read before anything is
+    replaced, so a broken file raises and leaves the previous data intact."""
     global _stops_file, STOPS, PLACES, _fleet, LINES, VEHICLES, ROUTES
-    _stops_file = _load("stops.json")
-    STOPS = {s["id"]: s for s in _stops_file["stops"]}
-    PLACES = {p["id"]: p for p in _stops_file.get("places", [])}
-    _fleet = _load("lines_and_vehicles.json")
-    LINES = {line["id"]: line for line in _fleet["lines"]}
-    VEHICLES = {v["side_number"]: v for v in _fleet["vehicles"]}
-    ROUTES = _load("routes.json")
+    stops_file, fleet, routes = _load("stops.json"), _load("lines_and_vehicles.json"), _load("routes.json")
+    _stops_file, _fleet, ROUTES = stops_file, fleet, routes
+    STOPS = {s["id"]: s for s in stops_file["stops"]}
+    PLACES = {p["id"]: p for p in stops_file.get("places", [])}
+    LINES = {line["id"]: line for line in fleet["lines"]}
+    VEHICLES = {v["side_number"]: v for v in fleet["vehicles"]}
 
 
 reload_data()

@@ -72,10 +72,10 @@ export default function Settings() {
             />
             <Button
               kind="plain"
-              label="Wsiadam do autobusu DE777 (+7 min)"
+              label="Wsiadam do autobusu DE777 (+11 min)"
               accessibilityHint="Przesuwa czas i GPS do autobusu 124 na Rondo Mogilskie. Rozmowa i trasa zostają."
               onPress={run("DE777", async () => {
-                await api.demoClock(backendUrl, 7); // no reset: the planned route stays known
+                await api.demoClock(backendUrl, 11); // DE777 left Al. Pokoju at 10; no reset: the route stays known
                 await api.demoGps(backendUrl, "DE777");
               })}
             />

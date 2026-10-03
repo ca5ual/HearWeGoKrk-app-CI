@@ -227,9 +227,9 @@
     "tram",
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": true
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "bialucha",
@@ -710,9 +710,9 @@
    "modes": [
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": false
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "brodowicza",
@@ -723,9 +723,9 @@
    "modes": [
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": false
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "grochowska",
@@ -736,9 +736,9 @@
    "modes": [
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": false
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "narzymskiego",
@@ -749,9 +749,9 @@
    "modes": [
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": false
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "muzeum_lotnictwa",
@@ -762,9 +762,9 @@
    "modes": [
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": false
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "os_kolorowe",
@@ -776,9 +776,9 @@
     "tram",
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": false
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   },
   {
    "id": "rondo_czyzynskie",
@@ -790,9 +790,9 @@
     "tram",
     "bus"
    ],
-   "step_free_access": true,
-   "tactile_paving": true,
-   "voice_departure_board": true
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
   }
  ],
  "places": [
