@@ -1,15 +1,18 @@
-// Design tokens from FRONTEND.md section 2 (dark, high contrast).
+// Design tokens from FRONTEND.md section 2 (dark, high contrast). Ratios checked for WCAG 2.2
+// 1.4.3 (text >= 4.5:1) and 1.4.11 (UI parts >= 3:1).
 export const colors = {
   bg: "#0E0E10",          // app background
   surface: "#1C1C1F",     // cards
   surfaceAlt: "#26262A",  // chips, inputs, pressed state
   text: "#FFFFFF",
   textMuted: "#A6A6AD",   // min. 4.5:1 on surface
-  depart: "#12A36F",      // departure time chip (green)
-  arrive: "#1B8FD6",      // arrival time chip (blue)
+  depart: "#0B7F56",      // primary buttons (green); white text 5.0:1
+  arrive: "#1B8FD6",      // destination outline (blue); 4.8:1 on surface
   live: "#2BD69B",        // live data, on time
   delay: "#FF5C6C",       // delayed / cancelled
-  accent: "#7C5CFF",      // talk button, active tab
+  accent: "#6E4FF5",      // talk button, selected segment; white text 5.1:1, 3.3:1 on surface
+  accentText: "#A895FF",  // accent used as text/icon colour (active tab); 6.8:1 on surface
+  border: "#8A8A93",      // input outlines, switch track; >= 4.4:1 on every surface
   ticket: "#FFC94D",      // ticket / cart actions
 };
 export const radius = { card: 20, chip: 12, pill: 999 };

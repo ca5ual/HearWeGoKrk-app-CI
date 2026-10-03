@@ -4,22 +4,22 @@ import { ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
 
 import { useAgent } from "@/agent/AgentContext";
 import { api } from "@/api";
-import { Button, Card, T } from "@/components/ui";
+import { Button, Card, IconText, T, inputOutline, switchColors } from "@/components/ui";
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 
 export default function Settings() {
   const { backendUrl, setBackendUrl, connection, headphones, setHeadphones, lang, setLang, refreshWallet } = useAgent();
   const [url, setUrl] = useState(backendUrl);
   const [demo, setDemo] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   const run = (label: string, fn: () => Promise<unknown>) => async () => {
     try {
       await fn();
-      setStatus(`✓ ${label}`);
+      setStatus({ ok: true, text: label });
       refreshWallet();
     } catch (e) {
-      setStatus(`✗ ${label}: ${String(e)}`);
+      setStatus({ ok: false, text: `${label}: ${String(e)}` });
     }
   };
 
@@ -27,10 +27,10 @@ export default function Settings() {
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <Card style={styles.card}>
         <Row label="Mam słuchawki" hint="Bez słuchawek kwoty nie są czytane na głos">
-          <Switch value={headphones} onValueChange={setHeadphones} accessibilityLabel="Mam słuchawki" />
+          <Switch {...switchColors} value={headphones} onValueChange={setHeadphones} accessibilityLabel="Mam słuchawki" />
         </Row>
         <Row label="English">
-          <Switch value={lang === "en"} onValueChange={(v) => setLang(v ? "en" : "pl")} accessibilityLabel="Odpowiedzi po angielsku" />
+          <Switch {...switchColors} value={lang === "en"} onValueChange={(v) => setLang(v ? "en" : "pl")} accessibilityLabel="Odpowiedzi po angielsku" />
         </Row>
       </Card>
 
@@ -39,6 +39,7 @@ export default function Settings() {
         <T variant="muted">
           Status: {connection === "open" ? "połączono" : connection === "connecting" ? "łączę…" : "brak połączenia"}
         </T>
+        <T variant="muted" size={14}>Adres serwera</T>
         <TextInput
           value={url}
           onChangeText={setUrl}
@@ -53,7 +54,7 @@ export default function Settings() {
 
       <Card style={styles.card}>
         <Row label="Tryb demo (scena)">
-          <Switch value={demo} onValueChange={setDemo} accessibilityLabel="Tryb demo" />
+          <Switch {...switchColors} value={demo} onValueChange={setDemo} accessibilityLabel="Tryb demo" />
         </Row>
         {demo ? (
           <View style={{ gap: space(2) }}>
@@ -67,7 +68,12 @@ export default function Settings() {
               })}
             />
             <Button kind="plain" label="Wyczyść sztuczny GPS" onPress={run("GPS", () => api.demoGpsClear(backendUrl))} />
-            {status ? <T variant="muted">{status}</T> : null}
+            {status ? (
+              <IconText
+                accessibilityLiveRegion="polite" variant="muted" icon={status.ok ? "check" : "x"} iconColor={status.ok ? colors.live : colors.delay}>
+                {status.text}
+              </IconText>
+            ) : null}
           </View>
         ) : null}
       </Card>
@@ -99,5 +105,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: font.body,
     fontSize: 16,
+    ...inputOutline,
   },
 });

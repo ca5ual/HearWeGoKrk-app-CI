@@ -166,3 +166,29 @@ def test_demo_reset_clears_open_websocket():
         replies = [m["text"] for m in _until_idle(ws) if m["type"] == "reply_text"]
         assert not any("Kupione" in r for r in replies)
     assert wallet.get_balance(Session())["balance_pln"] == 20.14
+
+
+def test_extend_pending_restarts_the_window():
+    """WCAG 2.2.1: "more time" resets the confirmation window but never confirms the purchase."""
+    import asyncio
+    import time
+
+    import voice_ws
+
+    async def run():
+        conv = voice_ws.Conversation(ws=None)
+        s = conv.session
+        s.new_turn()
+        _board_rz612()
+        tools.execute(s, "match_boarded_vehicle")
+        prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n"})
+        pid = prep.result["pending_action_id"]
+        s.pending.created_at -= 100            # almost expired
+        s.pending.retries = 1
+        assert not conv.extend_pending("wrong-id")
+        assert conv.extend_pending(pid)
+        assert time.time() - s.pending.created_at < 1 and s.pending.retries == 0
+        assert s.pending is not None and conv.session.timer_task is not None
+        conv.close()
+
+    asyncio.run(run())

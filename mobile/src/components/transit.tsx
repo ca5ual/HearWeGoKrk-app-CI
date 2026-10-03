@@ -6,9 +6,9 @@ import { StyleSheet, View } from "react-native";
 import { lowFloorLabel, modeName } from "../format";
 import { colors, radius, space } from "../theme";
 import type { LowFloor, Mode } from "../types";
-import { T } from "./ui";
+import { IconText, T, type IconName } from "./ui";
 
-export const MODE_ICON: Record<Mode, string> = { tram: "🚋", bus: "🚌", train: "🚆" };
+export const MODE_ICON: Record<Mode, IconName> = { tram: "tram-front", bus: "bus-front", train: "train-front" };
 
 /** "Tramwaj", "Autobus", "Pociąg". */
 export const modeTitle = (mode: Mode) => {
@@ -30,24 +30,30 @@ export function LowFloorNote({ lowFloor, size = 14 }: { lowFloor?: LowFloor; siz
   if (!lowFloor) return null;
   const none = lowFloor === "none";
   return (
-    <T size={size} color={none ? colors.delay : colors.live}>
-      {none ? "⚠ " : "♿ "}
+    <IconText size={size} icon={none ? "triangle-alert" : "accessibility"} color={none ? colors.delay : colors.live}>
       {lowFloorLabel(lowFloor)}
-    </T>
+    </IconText>
   );
 }
 
 export function LiveIndicator({ dataSource, delayed }: { dataSource?: string; delayed?: boolean }) {
   const live = dataSource === "live" || dataSource === "simulated_live";
-  if (!live) return <T variant="muted" size={13} accessibilityLabel="według rozkładu">według rozkładu</T>;
+  if (!live) {
+    return (
+      <IconText variant="muted" size={13} icon="clock" accessibilityLabel="według rozkładu">
+        według rozkładu
+      </IconText>
+    );
+  }
   return (
-    <T
+    <IconText
       size={13}
+      icon="radio"
       color={delayed ? colors.delay : colors.live}
       accessibilityLabel={delayed ? "dane na żywo, opóźniony" : "dane na żywo"}
     >
-      ● na żywo
-    </T>
+      na żywo
+    </IconText>
   );
 }
 

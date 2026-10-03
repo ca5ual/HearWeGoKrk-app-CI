@@ -4,17 +4,18 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { useReducedMotion } from "@/a11y";
 import { useAgent } from "@/agent/AgentContext";
 import { DepartureRow, RouteCard } from "@/components/route";
 import { TalkButton } from "@/components/TalkButton";
-import { Button, Card, T } from "@/components/ui";
+import { Button, Card, IconText, T, type IconName } from "@/components/ui";
 import { inMinutes } from "@/format";
 import { MIN_TOUCH, colors, radius, space } from "@/theme";
 
 const EXAMPLES = ["Jak dojadę na Rynek?", "Kiedy następna czternastka?", "Kup bilet"];
 
 export default function VoiceHome() {
-  const { connection, replyText, notice, replay, backendUrl } = useAgent();
+  const { connection, state, replyText, notice, replay, backendUrl, cancelListening } = useAgent();
   const [open, setOpen] = useState(false);
 
   return (
@@ -24,7 +25,7 @@ export default function VoiceHome() {
           <T variant="title" color={colors.delay}>
             {connection === "connecting" ? "Łączę z serwerem…" : "Brak połączenia z serwerem"}
           </T>
-          <T variant="muted">{backendUrl} — zmień w ustawieniach (👤)</T>
+          <T variant="muted">{backendUrl} — zmień w ustawieniach (ikona profilu w prawym górnym rogu)</T>
         </Card>
       ) : null}
       {notice ? <T variant="title" color={colors.ticket}>{notice}</T> : null}
@@ -33,12 +34,16 @@ export default function VoiceHome() {
 
       <View style={styles.bottom}>
         <SmallButton
-          label="💬 Tekst rozmowy"
+          icon="message-square-text"
+          label="Tekst rozmowy"
           a11y="Tekst rozmowy"
           hint="Pokazuje, co powiedział asystent"
           onPress={() => setOpen(true)}
         />
-        {replyText ? <SmallButton label="🔁 Powtórz" a11y="Powtórz odpowiedź" onPress={replay} /> : null}
+        {state === "listening" ? (
+          <SmallButton icon="x" label="Anuluj" a11y="Anuluj nagrywanie" hint="Nic nie zostanie wysłane" onPress={cancelListening} />
+        ) : null}
+        {replyText && state !== "listening" ? <SmallButton icon="rotate-ccw" label="Powtórz" a11y="Powtórz odpowiedź" onPress={replay} /> : null}
       </View>
 
       <ConversationPanel visible={open} onClose={() => setOpen(false)} />
@@ -46,7 +51,19 @@ export default function VoiceHome() {
   );
 }
 
-function SmallButton({ label, a11y, hint, onPress }: { label: string; a11y: string; hint?: string; onPress: () => void }) {
+function SmallButton({
+  icon,
+  label,
+  a11y,
+  hint,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  a11y: string;
+  hint?: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -55,13 +72,14 @@ function SmallButton({ label, a11y, hint, onPress }: { label: string; a11y: stri
       accessibilityHint={hint}
       style={({ pressed }) => [styles.small, { opacity: pressed ? 0.75 : 1 }]}
     >
-      <T variant="title" size={16}>{label}</T>
+      <IconText variant="title" size={16} icon={icon}>{label}</IconText>
     </Pressable>
   );
 }
 
 function ConversationPanel({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { replyText, transcript, sendText, replay } = useAgent();
+  const reduced = useReducedMotion();
   const empty = !replyText && !transcript;
 
   const go = (path: "/route/results" | "/departures" | "/trip") => {
@@ -74,7 +92,7 @@ function ConversationPanel({ visible, onClose }: { visible: boolean; onClose: ()
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reduced ? "none" : "slide"} onRequestClose={onClose}>
       <View style={styles.panel} accessibilityViewIsModal>
         <View style={styles.panelHead}>
           <T variant="title" size={24} accessibilityRole="header">Tekst rozmowy</T>
@@ -91,7 +109,7 @@ function ConversationPanel({ visible, onClose }: { visible: boolean; onClose: ()
             <View style={{ gap: space(1) }}>
               <T variant="muted">Asystent</T>
               <T variant="title" size={24} style={{ lineHeight: 32 }}>{replyText}</T>
-              <Button kind="plain" label="🔁 Powtórz" onPress={replay} style={{ alignSelf: "flex-start" }} />
+              <Button kind="plain" icon="rotate-ccw" label="Powtórz" onPress={replay} style={{ alignSelf: "flex-start" }} />
             </View>
           ) : null}
 

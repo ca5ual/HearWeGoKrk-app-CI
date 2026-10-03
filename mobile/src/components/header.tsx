@@ -4,9 +4,26 @@ import { Pressable, View } from "react-native";
 
 import { MIN_TOUCH, colors, font } from "../theme";
 import { BalanceChip } from "./money";
-import { T } from "./ui";
+import { Icon } from "./ui";
 
-/** Right side of every header: balance chip + profile/settings. */
+const iconButton = { width: MIN_TOUCH, height: MIN_TOUCH, alignItems: "center", justifyContent: "center" } as const;
+
+/** Help is always the last item in the header, on every screen (WCAG 2.2 3.2.6 Consistent Help). */
+export function HelpButton() {
+  return (
+    <Pressable
+      onPress={() => router.push("/help")}
+      accessibilityRole="button"
+      accessibilityLabel="Pomoc"
+      accessibilityHint="Jak korzystać z aplikacji"
+      style={iconButton}
+    >
+      <Icon name="circle-help" size={28} />
+    </Pressable>
+  );
+}
+
+/** Right side of every header: balance chip, profile/settings, help. */
 export function HeaderRight() {
   return (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -15,10 +32,11 @@ export function HeaderRight() {
         onPress={() => router.push("/settings")}
         accessibilityRole="button"
         accessibilityLabel="Profil i ustawienia"
-        style={{ width: MIN_TOUCH, height: MIN_TOUCH, alignItems: "center", justifyContent: "center" }}
+        style={iconButton}
       >
-        <T size={24} importantForAccessibility="no">👤</T>
+        <Icon name="circle-user" size={28} />
       </Pressable>
+      <HelpButton />
     </View>
   );
 }

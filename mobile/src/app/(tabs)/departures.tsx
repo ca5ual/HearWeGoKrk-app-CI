@@ -1,4 +1,5 @@
-// 5.5 Departures board. Polls GET /stops/{id}/departures every 30 s while visible.
+// 5.5 Departures board. Polls GET /stops/{id}/departures every 30 s while visible, unless the user
+// paused it (WCAG 2.2.2: a list that changes under a screen reader must be stoppable).
 // When the agent answers a departures question, the board jumps to that stop (and line).
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -7,7 +8,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native
 import { useAgent } from "@/agent/AgentContext";
 import { api } from "@/api";
 import { DepartureRow } from "@/components/route";
-import { Button, Card, T } from "@/components/ui";
+import { Button, Card, IconText, T, inputOutline } from "@/components/ui";
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 import type { Departure, Stop } from "@/types";
 
@@ -27,6 +28,7 @@ export default function Departures() {
   const [deps, setDeps] = useState<Departure[] | null>(null);
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<ModeFilter>("all");
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     api.stops(backendUrl).then(setStops).catch(() => {});
@@ -52,9 +54,10 @@ export default function Departures() {
   useFocusEffect(
     useCallback(() => {
       load();
+      if (paused) return;
       const t = setInterval(load, 30000);
       return () => clearInterval(t);
-    }, [load]),
+    }, [load, paused]),
   );
 
   const q = query.trim().toLowerCase();
@@ -75,6 +78,7 @@ export default function Departures() {
         <T variant="title" size={28}>{stop?.name ?? stopId}</T>
       </View>
 
+      <T variant="muted" size={14} importantForAccessibility="no">Zmień przystanek lub wpisz numer linii</T>
       <TextInput
         value={query}
         onChangeText={setQuery}
@@ -96,7 +100,7 @@ export default function Departures() {
               accessibilityLabel={`Pokaż odjazdy z przystanku ${s.name}`}
               style={({ pressed }) => [styles.match, pressed && { backgroundColor: colors.surfaceAlt }]}
             >
-              <T variant="title" size={17}>📍 {s.name}</T>
+              <IconText variant="title" size={17} icon="map-pin">{s.name}</IconText>
             </Pressable>
           ))}
         </Card>
@@ -126,8 +130,17 @@ export default function Departures() {
 
       <View style={styles.listHead}>
         <T variant="title" accessibilityRole="header">Najbliższe odjazdy</T>
-        <T variant="muted" size={13}>odświeżane co 30 s</T>
+        <Button
+          kind="plain"
+          icon={paused ? "play" : "pause"}
+          label={paused ? "Wznów odświeżanie" : "Wstrzymaj odświeżanie"}
+          accessibilityHint={paused ? "Lista znowu będzie się aktualizować co 30 sekund" : "Lista przestanie się zmieniać"}
+          onPress={() => setPaused((p) => !p)}
+        />
       </View>
+      <T variant="muted" size={13}>
+        {paused ? "Odświeżanie wstrzymane — lista się nie zmienia." : "Lista odświeża się co 30 s."}
+      </T>
       <Card style={{ paddingVertical: space(1) }}>
         {deps === null ? <T variant="muted" style={styles.empty}>Brak danych.</T> : null}
         {deps && !shown.length ? <T variant="muted" style={styles.empty}>Brak odjazdów.</T> : null}
@@ -147,11 +160,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: font.body,
     fontSize: 17,
+    ...inputOutline,
   },
   match: { borderRadius: radius.chip, padding: space(3), minHeight: MIN_TOUCH, justifyContent: "center" },
-  seg: { flexDirection: "row", backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, padding: 4 },
+  seg: { flexDirection: "row", backgroundColor: colors.surface, borderRadius: radius.pill, padding: 4 },
   segItem: { flex: 1, minHeight: MIN_TOUCH, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
   lineFilter: { flexDirection: "row", alignItems: "center", gap: space(3), flexWrap: "wrap" },
-  listHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap" },
+  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: space(2) },
   empty: { paddingVertical: space(3) },
 });

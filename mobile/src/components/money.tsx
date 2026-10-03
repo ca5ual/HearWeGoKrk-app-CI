@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 
+import { useReducedMotion } from "../a11y";
 import { useAgent, type Pending } from "../agent/AgentContext";
 import { pricePl } from "../format";
 import { MIN_TOUCH, colors, radius, space } from "../theme";
-import { Button, Card, T } from "./ui";
+import { Button, Card, Icon, T } from "./ui";
 
 /** Without headphones the amount stays hidden (TalkBack would read it aloud); tap shows it for 5 s. */
 export function BalanceChip() {
@@ -48,7 +49,7 @@ export function TicketFab({ price }: { price?: number }) {
         accessibilityHint="Asystent przygotuje bilet i poprosi o potwierdzenie"
         style={({ pressed }) => [styles.fab, { opacity: pressed ? 0.8 : 1 }]}
       >
-        <T size={26} importantForAccessibility="no">🛒</T>
+        <Icon name="shopping-cart" size={28} color="#000" />
       </Pressable>
     </View>
   );
@@ -61,7 +62,8 @@ export function ConfirmModal() {
 }
 
 function ConfirmSheet({ pending }: { pending: Pending }) {
-  const { confirmPending, cancelPending, wallet } = useAgent();
+  const { confirmPending, cancelPending, extendPending, wallet } = useAgent();
+  const reduced = useReducedMotion();
   const [now, setNow] = useState(() => Date.now());
   const [showPrice, setShowPrice] = useState(false);
 
@@ -76,7 +78,7 @@ function ConfirmSheet({ pending }: { pending: Pending }) {
   const payment = d.payment_source === "balance" ? "Z salda w aplikacji" : wallet?.default_card ?? "Domyślna karta";
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={cancelPending}>
+    <Modal visible transparent animationType={reduced ? "none" : "slide"} onRequestClose={cancelPending}>
       <View style={styles.backdrop}>
         <Card style={styles.sheet} accessibilityViewIsModal>
           <T variant="muted" accessibilityRole="header">Potwierdź zakup</T>
@@ -107,8 +109,16 @@ function ConfirmSheet({ pending }: { pending: Pending }) {
             {left > 0 ? `Czekam na odpowiedź: ${left} s` : "Nie usłyszałem odpowiedzi — powiedz tak albo nie"}
           </T>
 
-          <Button kind="ticket" label="Potwierdź" onPress={confirmPending} />
-          <Button kind="outline" label="Anuluj" onPress={cancelPending} />
+          <Button kind="ticket" icon="check" label="Potwierdź" onPress={confirmPending} />
+          <Button kind="outline" icon="x" label="Anuluj" onPress={cancelPending} />
+          {/* WCAG 2.2.1 Timing Adjustable: one tap restarts the window; it never confirms. */}
+          <Button
+            kind="plain"
+            icon="timer-reset"
+            label="Potrzebuję więcej czasu"
+            accessibilityHint="Wydłuża czas na decyzję. Zakup nadal wymaga potwierdzenia."
+            onPress={extendPending}
+          />
         </Card>
       </View>
     </Modal>

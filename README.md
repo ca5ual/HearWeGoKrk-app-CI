@@ -85,7 +85,10 @@ Client → server:
 {"type": "end_of_speech"}
 {"type": "context", "lat": 50.06, "lon": 19.98, "headphones": true, "lang": "pl"}
 {"type": "stop"}
+{"type": "extend_pending", "id": "<pending_action_id>"}
 ```
+`extend_pending` ("Potrzebuję więcej czasu", WCAG 2.2.1) restarts the confirmation window of the pending
+purchase. It never confirms anything.
 Server → client:
 ```json
 {"type": "state", "value": "listening | thinking | speaking | idle"}

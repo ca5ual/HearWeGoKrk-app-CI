@@ -10,6 +10,7 @@ import {
 import * as Haptics from "expo-haptics";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
+import { useAnnounce } from "../a11y";
 import { api } from "../api";
 import { defaultBackendUrl, wsUrl } from "../config";
 import type { AgentState, PreparedTicket, RouteResult, TripStatus, UiPayload, Wallet } from "../types";
@@ -57,9 +58,11 @@ type AgentCtx = {
   sendText: (text: string) => void;
   startListening: () => Promise<void>;
   stopListening: () => Promise<void>;
+  cancelListening: () => Promise<void>;  // drop the recording, send nothing (WCAG 2.5.2)
   stop: () => void;
   confirmPending: () => void;
   cancelPending: () => void;
+  extendPending: () => void;             // "more time" on the purchase confirmation (WCAG 2.2.1)
   replay: () => void;
 };
 
@@ -281,6 +284,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   // preparing it twice throws — so every transition goes through this one ref.
   const mic = useRef<"idle" | "starting" | "recording" | "stopping">("idle");
   const stopRequested = useRef(false); // button released while the recorder was still starting
+  const cancelRequested = useRef(false); // recording cancelled while the recorder was still starting
 
   const micFailed = useCallback((what: string, e: unknown) => {
     console.warn(`[audio] ${what}:`, e);
@@ -329,15 +333,34 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     else notConnected();
   }, [recorder, send, waitForReply, notConnected, micFailed]);
 
+  /** Abort a recording: nothing is sent, nothing happens. */
+  const cancelListening = useCallback(async () => {
+    if (mic.current === "starting") {
+      cancelRequested.current = true;
+      return;
+    }
+    if (mic.current !== "recording") return;
+    mic.current = "stopping";
+    await resetRecorder();
+    try {
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+    } catch {}
+    mic.current = "idle";
+    setState("idle");
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setNotice("Anulowano. Nic nie zostało wysłane.");
+  }, [resetRecorder]);
+
   const startListening = useCallback(async () => {
     if (mic.current !== "idle") return; // a second press while starting/stopping: ignore
     mic.current = "starting";
     stopRequested.current = false;
+    cancelRequested.current = false;
     try {
       const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
         mic.current = "idle";
-        setNotice("Potrzebuję dostępu do mikrofonu (Ustawienia telefonu → Aplikacje → Expo Go).");
+        setNotice("Potrzebuję dostępu do mikrofonu (Ustawienia telefonu, Aplikacje, Expo Go).");
         return;
       }
       beginTurn();
@@ -351,8 +374,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     }
     mic.current = "recording";
     setState("listening");
-    if (stopRequested.current) stopListening(); // released during the permission dialog / prepare
-  }, [recorder, resetRecorder, micFailed, stopListening]);
+    if (cancelRequested.current) cancelListening();
+    else if (stopRequested.current) stopListening(); // released during the permission dialog / prepare
+  }, [recorder, resetRecorder, micFailed, stopListening, cancelListening]);
 
   const stop = useCallback(() => {
     beginTurn();
@@ -368,6 +392,18 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     stop();
   }, [stop]);
 
+  // Restarts the confirmation window on the server; the purchase still needs an explicit "tak".
+  const extendPending = useCallback(() => {
+    if (!pending) return;
+    if (!send({ type: "extend_pending", id: pending.id })) return notConnected();
+    setPending((p) => (p && p.id === pending.id ? { ...p, receivedAt: Date.now() } : p));
+    setNotice("Masz więcej czasu na decyzję.");
+  }, [pending, send, notConnected]);
+
+  // Status messages are read out by TalkBack/VoiceOver (WCAG 4.1.3).
+  useAnnounce(notice);
+  useAnnounce(connection === "closed" ? "Brak połączenia z serwerem" : null);
+
   const replay = useCallback(() => replayLast(replyText, settings.current.lang), [replyText]);
 
   const setRouteResult = useCallback((r: RouteResult) => {
@@ -378,11 +414,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     () => ({
       backendUrl, setBackendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult,
       pending, notice, trip, wallet, refreshWallet, headphones, setHeadphones, lang, setLang,
-      sendText, startListening, stopListening, stop, confirmPending, cancelPending, replay,
+      sendText, startListening, stopListening, cancelListening, stop, confirmPending, cancelPending, extendPending,
+      replay,
     }),
     [backendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult, pending, notice, trip,
-      wallet, refreshWallet, headphones, lang, sendText, startListening, stopListening, stop, confirmPending,
-      cancelPending, replay],
+      wallet, refreshWallet, headphones, lang, sendText, startListening, stopListening, cancelListening, stop,
+      confirmPending, cancelPending, extendPending, replay],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

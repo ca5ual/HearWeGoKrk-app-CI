@@ -3,7 +3,7 @@
     "name": "HearWeGoKrk",
     "slug": "hearwegokrk",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
@@ -36,7 +36,8 @@
           "locationWhenInUsePermission": "HearWeGoKrk używa lokalizacji, żeby znaleźć najbliższy przystanek i pojazd, w którym jedziesz."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "@react-native-vector-icons/lucide"
     ],
     "scheme": "hearwegokrk",
     "backgroundColor": "#0E0E10"

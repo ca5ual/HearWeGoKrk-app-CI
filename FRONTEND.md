@@ -62,19 +62,19 @@ When the agent sends a `ui` message, store its data so the matching screen shows
 
 ## 4. Shared components
 
-Pair every colour or icon with words that say the same thing.
+Icons: plain outline icons from Lucide (`@react-native-vector-icons/lucide`) via the `Icon` / `IconText` components in `components/ui.tsx`. No emoji. Icons are decorative (hidden from screen readers); pair every colour or icon with words that say the same thing.
 
 ### `LineBox`
 - A filled box with the line number in large type and the mode underneath ("14" / "tramwaj"). Decorative: the row's a11y label covers it.
 
 ### `LowFloorNote`
-- `"♿ niskopodłogowy"` / `"♿ częściowo niskopodłogowy"` in green, `"⚠ wysokie stopnie"` in red.
+- `accessibility` icon + "niskopodłogowy" / "częściowo niskopodłogowy" in green, `triangle-alert` icon + "wysokie stopnie" in red.
 
 ### `LiveIndicator`
 - Text `"● na żywo"` (green, or red when delayed), or muted `"według rozkładu"`. Maps to `data_source` from the backend.
 
 ### `TalkButton`
-- A large rounded panel in the accent colour that fills the space it is given. States: idle / listening (pulsing border) / thinking (spinner) / speaking (waveform).
+- A large rounded panel in the accent colour that fills the space it is given. States: idle / listening (pulsing border) / thinking (spinner) (while the reply plays it looks idle: "Mów").
 - Haptics: `impactAsync(Medium)` on press, `notificationAsync(Success)` when a reply starts.
 - a11y: role button, label `"Mów do asystenta"`, hint `"Przytrzymaj i mów"`.
 
@@ -86,7 +86,7 @@ Pair every colour or icon with words that say the same thing.
 ### 5.1 Voice home (`/`)
 - The `TalkButton` fills most of the screen (a large rounded panel), so a blind user can hit it without aiming.
 - No text input: the app is used by speaking.
-- Under it, small buttons: **"💬 Tekst rozmowy"** and, once there is a reply, **"🔁 Powtórz"** (replays the last audio).
+- Under it, small buttons: **"Tekst rozmowy"** (`message-square-text` icon) and, once there is a reply, **"Powtórz"** (`rotate-ccw` icon) (replays the last audio).
 - "Tekst rozmowy" opens a full-screen panel: the user's transcript, the agent's reply in large type, the last result card (tap opens the full screen), and, before the first question, 3 example phrases ("Jak dojadę na Rynek?", "Kiedy następna czternastka?", "Kup bilet") for discoverability.
 - The connection warning and ticket notices stay on the main screen, above the button.
 
@@ -100,7 +100,7 @@ Pair every colour or icon with words that say the same thing.
 - Header "Trasy do" + destination in large type.
 - One `RouteCard` per itinerary, titled "Polecana trasa" / "Inna trasa N":
   - Top: "za 5 min" in large type + "odjazd 13:28" on the left; total minutes + "przyjazd 14:05" on the right.
-  - Then the legs as plain lines: "🚶 Pieszo 4 min", "🚋 Tramwaj 14 → Bronowice" + `LowFloorNote`.
+  - Then the legs as plain lines: "Pieszo 4 min" (`footprints` icon), "Tramwaj 14, kierunek Bronowice" (mode icon) + `LowFloorNote`.
   - Footer: `LiveIndicator` and "Szczegóły ›".
 - **One accessible element per card**. Example label:
   `"Polecana trasa. Odjazd za 5 minut. Autobus 128, potem 172. Dojście 4 minuty. Odjazd 13:28, przyjazd 14:05. Razem 41 minut. Wszystkie pojazdy niskopodłogowe."`
@@ -110,7 +110,7 @@ Pair every colour or icon with words that say the same thing.
 - The route summary card at the top, then the route as numbered step cards ("Krok 1", "Krok 2", …):
   - Walk step: "Idź 800 m", the spoken `instruction_pl`, the time it takes, and when you arrive.
   - Ride step: `LineBox` + "Wsiądź: tramwaj 14" + headsign; "Przystanek" and "Odjazd" rows; a vehicle box (side number in large type, model, `LowFloorNote`, `boarding_hint_pl`); "Wysiądź" and "O godzinie" rows.
-  - Goal card: "📍 destination" + "Przyjazd".
+  - Goal card: `map-pin` icon + destination, then "Przyjazd".
 - Floating `TicketFab`.
 
 ### 5.5 Departures board (`/departures`)
@@ -121,7 +121,7 @@ Pair every colour or icon with words that say the same thing.
 - a11y label per row: `"Autobus 179 w kierunku Dworzec Główny, za 2 minuty, o 15:58, na żywo, niskopodłogowy"`.
 
 ### 5.6 Tickets — removed
-- No tickets screen or tab. Buying is voice-only ("kup bilet", or the 🛒 `TicketFab` on route screens) and always ends in the 5.7 modal.
+- No tickets screen or tab. Buying is voice-only ("kup bilet", or the cart `TicketFab` on route screens) and always ends in the 5.7 modal.
 
 ### 5.7 Ticket confirmation (modal) — HearWeGoKrk addition
 - Opened by the `pending_confirmation` message.
@@ -161,6 +161,31 @@ Write a single `renderAgentUI(payload)` switch. Unknown components are ignored, 
 - [ ] Text survives 200% font scale without clipping.
 - [ ] No information is conveyed by colour only.
 - [ ] Every action that costs money goes through the 5.7 modal.
+
+### WCAG 2.2 (target: level AA)
+
+The app follows [WCAG 2.2](https://www.w3.org/TR/WCAG22/), applied to a native app. Where each criterion lives:
+
+| Criterion | How the app meets it | Where |
+|---|---|---|
+| 1.3.4 Orientation (AA) | Portrait and landscape both work; orientation is not locked. | `app.json` |
+| 1.4.3 Contrast (Minimum) (AA) | Text ≥ 4.5:1. Button greens/purples were darkened so white labels pass (5.0:1, 5.1:1). | `theme.ts` |
+| 1.4.4 Resize Text (AA) | System font scaling stays on; layouts wrap at 200%. | all screens |
+| 1.4.11 Non-text Contrast (AA) | Input outlines and the switch "off" track use `colors.border` (≥ 4.4:1); the selected segment is ≥ 3:1 against its track. | `ui.tsx` (`inputOutline`, `switchColors`) |
+| 2.2.1 Timing Adjustable (A) | The purchase confirmation has a "Potrzebuję więcej czasu" button (`extend_pending` → fresh window on the server). Silence still never confirms. | `money.tsx`, `voice_ws.py` |
+| 2.2.2 Pause, Stop, Hide (A) | The auto-refreshing departures list can be paused. | `departures.tsx` |
+| 2.3.3 Animation from Interactions (AAA) | With the phone's "remove animations" setting on, the talk button's pulse and the modal slide-ins are turned off. | `a11y.ts` (`useReducedMotion`) |
+| 2.5.2 Pointer Cancellation (A) | Recording starts on touch-down, but sliding the finger off the button before release cancels it, and an "Anuluj" button cancels a tap-started recording. Nothing is sent. | `TalkButton.tsx`, `cancelListening` |
+| 2.5.7 Dragging Movements (AA, new) | No feature needs dragging (the ticket carousel is gone). | — |
+| 2.5.8 Target Size (Minimum) (AA, new) | Every control is ≥ 48×48 dp (WCAG asks for 24). The talk button fills the screen. | `MIN_TOUCH` |
+| 3.2.6 Consistent Help (A, new) | A help button (`circle-help`) is always the last item in the header, on every screen, and opens the Pomoc screen. | `header.tsx`, `app/help.tsx` |
+| 3.3.4 Error Prevention (Financial) (AA) | Every purchase is confirmed in the 5.7 modal or by an explicit spoken "tak". | `money.tsx` |
+| 3.3.7 Redundant Entry (A, new) | Trasa keeps the last destination and route; Rozkłady keeps the asked stop. | `route/index.tsx`, `departures.tsx` |
+| 3.3.8 Accessible Authentication (AA, new) | No login or password: nothing to remember or transcribe. | — |
+| 4.1.2 Name, Role, Value (A) | Every control has a Polish label and role; icons are hidden from screen readers. | all screens |
+| 4.1.3 Status Messages (AA) | Notices, connection loss and errors are announced without moving focus. | `a11y.ts` (`useAnnounce`) |
+
+Not covered yet: 2.4.11 Focus Not Obscured and 2.4.7 Focus Visible with a hardware keyboard (not tested), 3.1.1/3.1.2 language of content for screen readers when replies are in English.
 
 ## 8. Build order (hackathon)
 

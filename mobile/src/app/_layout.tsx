@@ -9,7 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import React from "react";
 
 import { AgentProvider } from "@/agent/AgentContext";
-import { headerOptions } from "@/components/header";
+import { HelpButton, headerOptions } from "@/components/header";
 import { ConfirmModal } from "@/components/money";
 import { colors } from "@/theme";
 
@@ -23,7 +23,8 @@ export default function RootLayout() {
       <Stack screenOptions={{ ...headerOptions, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="trip" options={{ title: "Jedziesz" }} />
-        <Stack.Screen name="settings" options={{ title: "Ustawienia", presentation: "modal", headerRight: undefined }} />
+        <Stack.Screen name="settings" options={{ title: "Ustawienia", presentation: "modal", headerRight: () => <HelpButton /> }} />
+        <Stack.Screen name="help" options={{ title: "Pomoc", presentation: "modal", headerRight: undefined }} />
       </Stack>
       {/* Every action that costs money goes through this modal (FRONTEND.md 5.7). */}
       <ConfirmModal />

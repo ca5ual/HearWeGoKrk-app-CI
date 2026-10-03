@@ -10,6 +10,7 @@ All of them go through Conversation.speak(), which serialises sending with a loc
 
 import asyncio
 import base64
+import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -83,6 +84,16 @@ class Conversation:
     def _restart_confirmation_timer(self) -> None:
         self._cancel_confirmation_timer()
         self.session.timer_task = asyncio.create_task(self._confirmation_timer(self.session.pending.id))
+
+    def extend_pending(self, pending_id: str | None) -> bool:
+        """Give the user a fresh confirmation window. Silence still never counts as consent."""
+        p = self.session.pending
+        if p is None or p.id != pending_id:
+            return False
+        p.created_at = time.time()
+        p.retries = 0
+        self._restart_confirmation_timer()
+        return True
 
     async def _confirmation_timer(self, pending_id: str) -> None:
         s = self.session
@@ -163,6 +174,8 @@ class Conversation:
             await self.handle_utterance(msg.get("text", ""))
         elif kind == "stop":  # hardware/emergency stop button on the phone
             await self.handle_utterance("stop")
+        elif kind == "extend_pending":  # "more time" on the confirmation modal (WCAG 2.2.1)
+            self.extend_pending(msg.get("id"))
         else:
             await self.send("error", message=f"unknown message type: {kind}")
 

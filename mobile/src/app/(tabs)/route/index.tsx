@@ -4,10 +4,11 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
 
+import { useAnnounce } from "@/a11y";
 import { useAgent } from "@/agent/AgentContext";
 import { api } from "@/api";
 import { RouteCard } from "@/components/route";
-import { Button, Card, T } from "@/components/ui";
+import { Button, Card, IconText, T, inputOutline, switchColors } from "@/components/ui";
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 
 // Destinations the backend knows (mock/routes.json); one tap searches.
@@ -28,6 +29,7 @@ export default function RouteSearch() {
   const [lowFloor, setLowFloor] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useAnnounce(error);
 
   const search = async (to = dest) => {
     if (!to.trim() || busy) return;
@@ -47,7 +49,7 @@ export default function RouteSearch() {
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <View style={{ gap: space(1) }}>
         <T variant="title" size={28} accessibilityRole="header">Dokąd jedziesz?</T>
-        <T variant="muted">Z: 📍 Twoja lokalizacja · odjazd teraz</T>
+        <IconText variant="muted" icon="map-pin">Z: Twoja lokalizacja · odjazd teraz</IconText>
       </View>
 
       <TextInput
@@ -98,21 +100,20 @@ export default function RouteSearch() {
 
       <Card style={styles.option}>
         <View style={{ flex: 1 }}>
-          <T variant="title" size={17}>♿ Pojazdy niskopodłogowe</T>
+          <IconText variant="title" size={17} icon="accessibility">Pojazdy niskopodłogowe</IconText>
           <T variant="muted" size={14}>Wybieraj tramwaje i autobusy bez stopni</T>
         </View>
         <Switch
+          {...switchColors}
           value={lowFloor}
           onValueChange={setLowFloor}
           accessibilityLabel="Preferuj pojazdy niskopodłogowe"
-          trackColor={{ true: colors.accent, false: colors.surfaceAlt }}
         />
       </Card>
 
-      <T variant="muted" size={14}>
-        <T size={14} color={colors.live}>● </T>
+      <IconText variant="muted" size={14} icon="radio" iconColor={colors.live}>
         Odjazdy liczone z danych na żywo. Możesz też zapytać głosem w zakładce Mów.
-      </T>
+      </IconText>
     </ScrollView>
   );
 }
@@ -127,6 +128,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: font.title,
     fontSize: 20,
+    ...inputOutline,
   },
   quick: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
   quickItem: {

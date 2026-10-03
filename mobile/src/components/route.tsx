@@ -6,7 +6,7 @@ import { inMinutes, isLive, lowFloorLabel, minusMinutes, minutesPl, modeName, st
 import { colors, radius, space } from "../theme";
 import type { Departure, Itinerary, RideLeg, TripStatus } from "../types";
 import { LineBox, LiveIndicator, LowFloorNote, MODE_ICON, modeTitle } from "./transit";
-import { Card, T } from "./ui";
+import { Card, Icon, IconText, T } from "./ui";
 
 const rides = (it: Itinerary) => it.legs.filter((l): l is RideLeg => l.type === "ride");
 
@@ -82,12 +82,12 @@ export function RouteCard({
         <View style={styles.legs}>
           {it.legs.map((leg, i) =>
             leg.type === "walk" ? (
-              <T key={i} variant="muted">🚶 Pieszo {leg.minutes} min</T>
+              <IconText key={i} variant="muted" icon="footprints">Pieszo {leg.minutes} min</IconText>
             ) : (
               <View key={i} style={{ gap: 2 }}>
-                <T variant="title" size={17}>
-                  {MODE_ICON[leg.mode]} {modeTitle(leg.mode)} {leg.line_number} → {leg.headsign}
-                </T>
+                <IconText variant="title" size={17} icon={MODE_ICON[leg.mode]}>
+                  {modeTitle(leg.mode)} {leg.line_number}, kierunek {leg.headsign}
+                </IconText>
                 <LowFloorNote lowFloor={leg.vehicle.low_floor} />
               </View>
             ),
@@ -95,7 +95,12 @@ export function RouteCard({
         </View>
         <View style={styles.between}>
           <LiveIndicator dataSource={dataSource} />
-          {onPress ? <T variant="title" size={16}>Szczegóły ›</T> : null}
+          {onPress ? (
+            <View style={styles.more}>
+              <T variant="title" size={16}>Szczegóły</T>
+              <Icon name="chevron-right" size={20} />
+            </View>
+          ) : null}
         </View>
       </Card>
     </Pressable>
@@ -117,7 +122,7 @@ export function ItinerarySteps({ it, destination }: { it: Itinerary; destination
               accessibilityLabel={`${step}. Idź ${leg.meters} metrów, ${leg.minutes} ${minutesPl(leg.minutes)}. ${leg.instruction_pl}. Na miejscu o ${leg.arrive}.`}
             >
               <T variant="muted">{step}</T>
-              <T variant="title" size={22}>🚶 Idź {leg.meters} m</T>
+              <IconText variant="title" size={22} icon="footprints">Idź {leg.meters} m</IconText>
               <T>{leg.instruction_pl}</T>
               <Fact label="Czas" value={`${leg.minutes} min`} />
               <Fact label="Na miejscu" value={leg.arrive} />
@@ -168,7 +173,7 @@ export function ItinerarySteps({ it, destination }: { it: Itinerary; destination
       })}
       <Card style={[styles.step, styles.goal]} accessible accessibilityLabel={`Cel: ${destination}, przyjazd ${it.arrival}`}>
         <T variant="muted">Cel</T>
-        <T variant="title" size={22}>📍 {destination}</T>
+        <IconText variant="title" size={22} icon="map-pin">{destination}</IconText>
         <Fact label="Przyjazd" value={it.arrival} />
       </Card>
     </View>
@@ -204,7 +209,7 @@ export function DepartureRow({ d }: { d: Departure }) {
     <View style={styles.depRow} accessible accessibilityLabel={departureLabel(d)}>
       <LineBox mode={d.mode} number={d.line_number} />
       <View style={{ flex: 1, gap: 2 }}>
-        <T variant="title" size={17} numberOfLines={2}>→ {d.headsign}</T>
+        <IconText variant="title" size={17} icon="arrow-right" numberOfLines={2}>{d.headsign}</IconText>
         <LowFloorNote lowFloor={d.vehicle.low_floor} />
         {delayed ? (
           <T size={14} color={colors.delay}>
@@ -254,6 +259,7 @@ export function TripView({ trip, target }: { trip: TripStatus; target?: string |
 }
 
 const styles = StyleSheet.create({
+  more: { flexDirection: "row", alignItems: "center", gap: 2 },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space(2), flexWrap: "wrap" },
   legs: { gap: space(2), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.surfaceAlt, paddingTop: space(3) },
   step: { gap: space(2) },
