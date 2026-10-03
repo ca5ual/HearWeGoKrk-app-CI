@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+
+# compare_agents.py output
+scripts/compare_results.json
