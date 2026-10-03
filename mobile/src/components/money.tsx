@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 
-import { useAgent } from "../agent/AgentContext";
+import { useAgent, type Pending } from "../agent/AgentContext";
 import { pricePl } from "../format";
 import { MIN_TOUCH, colors, radius, space } from "../theme";
 import { Button, Card, T } from "./ui";
@@ -55,18 +55,21 @@ export function TicketFab({ price }: { price?: number }) {
 }
 
 export function ConfirmModal() {
-  const { pending, confirmPending, cancelPending, wallet } = useAgent();
-  const [now, setNow] = useState(Date.now());
+  const { pending } = useAgent();
+  // key: a new purchase gets fresh state (price hidden again, new countdown).
+  return pending ? <ConfirmSheet key={pending.id} pending={pending} /> : null;
+}
+
+function ConfirmSheet({ pending }: { pending: Pending }) {
+  const { confirmPending, cancelPending, wallet } = useAgent();
+  const [now, setNow] = useState(() => Date.now());
   const [showPrice, setShowPrice] = useState(false);
 
   useEffect(() => {
-    setShowPrice(false);
-    if (!pending) return;
     const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
-  }, [pending]);
+  }, []);
 
-  if (!pending) return null;
   const d = pending.data;
   const left = Math.max(0, Math.ceil(pending.timeoutS - (now - pending.receivedAt) / 1000));
   const priceVisible = d.show_price || showPrice;

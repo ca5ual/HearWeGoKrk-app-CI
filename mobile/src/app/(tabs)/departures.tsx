@@ -26,14 +26,17 @@ export default function Departures() {
   }, [backendUrl]);
 
   // Agent result -> follow it.
-  useEffect(() => {
+  const [followed, setFollowed] = useState(ui.departures);
+  if (ui.departures !== followed) {
     const d = ui.departures;
-    if (!d) return;
-    setStopId(d.stop_id);
-    setDeps(d.departures);
-    const lines = new Set(d.departures.map((x) => x.line_number));
-    setQuery(lines.size === 1 ? [...lines][0] : "");
-  }, [ui.departures]);
+    setFollowed(d);
+    if (d) {
+      setStopId(d.stop_id);
+      setDeps(d.departures);
+      const lines = new Set(d.departures.map((x) => x.line_number));
+      setQuery(lines.size === 1 ? [...lines][0] : "");
+    }
+  }
 
   const load = useCallback(() => {
     api.departures(backendUrl, stopId, 10).then(setDeps).catch(() => setDeps(null));

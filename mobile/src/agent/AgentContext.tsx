@@ -96,7 +96,6 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const userTurn = useRef(false);            // between our utterance and the next idle: navigate on `ui`
   const reply = useRef<{ text: string; chunks: string[] } | null>(null);
   const settings = useRef({ headphones, lang });
-  settings.current = { headphones, lang };
 
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
 
@@ -228,6 +227,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   }, [sendContext]);
 
   useEffect(() => {
+    settings.current = { headphones, lang };
     sendContext();
   }, [headphones, lang, sendContext]);
 

@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, View } from "react-native";
 
 import { useAgent } from "../agent/AgentContext";
@@ -17,7 +17,7 @@ export function TalkButton() {
   const { state, connection, startListening, stopListening } = useAgent();
   const pressedAt = useRef(0);
   const stopOnRelease = useRef(false);
-  const pulse = useRef(new Animated.Value(0)).current;
+  const [pulse] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (state !== "listening") return;

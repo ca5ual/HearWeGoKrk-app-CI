@@ -15,7 +15,8 @@ export default function Tickets() {
   const { backendUrl, ui, wallet, refreshWallet, headphones } = useAgent();
   const [tab, setTab] = useState<"shop" | "mine">("shop");
   const [fare, setFare] = useState<"u" | "n">("n");
-  const [catalog, setCatalog] = useState<Ticket[]>([]);
+  const [fetched, setFetched] = useState<Ticket[]>([]);
+  const catalog = ui.ticket_shop?.tickets ?? fetched;
   const [screenReader, setScreenReader] = useState(false);
 
   useEffect(() => {
@@ -25,9 +26,8 @@ export default function Tickets() {
   }, []);
 
   useEffect(() => {
-    if (ui.ticket_shop) setCatalog(ui.ticket_shop.tickets);
-    else api.catalog(backendUrl).then(setCatalog).catch(() => {});
-  }, [backendUrl, ui.ticket_shop]);
+    api.catalog(backendUrl).then(setFetched).catch(() => {});
+  }, [backendUrl]);
 
   useFocusEffect(useCallback(() => refreshWallet(), [refreshWallet]));
 

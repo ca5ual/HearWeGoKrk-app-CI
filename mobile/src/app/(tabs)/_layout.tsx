@@ -5,7 +5,9 @@ import { headerOptions } from "@/components/header";
 import { T } from "@/components/ui";
 import { colors, font } from "@/theme";
 
-const icon = (glyph: string) => () => <T size={22} importantForAccessibility="no">{glyph}</T>;
+function TabIcon({ glyph }: { glyph: string }) {
+  return <T size={22} importantForAccessibility="no">{glyph}</T>;
+}
 
 export default function TabsLayout() {
   return (
@@ -19,10 +21,10 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: font.title, fontSize: 13 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Mów", tabBarIcon: icon("🎙") }} />
-      <Tabs.Screen name="route" options={{ title: "Trasa", headerShown: false, tabBarIcon: icon("🧭") }} />
-      <Tabs.Screen name="departures" options={{ title: "Rozkłady", tabBarIcon: icon("🕑") }} />
-      <Tabs.Screen name="tickets" options={{ title: "Bilety", tabBarIcon: icon("🎫") }} />
+      <Tabs.Screen name="index" options={{ title: "Mów", tabBarIcon: () => <TabIcon glyph="🎙" /> }} />
+      <Tabs.Screen name="route" options={{ title: "Trasa", headerShown: false, tabBarIcon: () => <TabIcon glyph="🧭" /> }} />
+      <Tabs.Screen name="departures" options={{ title: "Rozkłady", tabBarIcon: () => <TabIcon glyph="🕑" /> }} />
+      <Tabs.Screen name="tickets" options={{ title: "Bilety", tabBarIcon: () => <TabIcon glyph="🎫" /> }} />
     </Tabs>
   );
 }
