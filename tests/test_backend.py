@@ -86,6 +86,27 @@ def test_departures_by_mode():
     assert mixed["departures"] and all(d["line_id"] == "B124" for d in mixed["departures"])
 
 
+def test_demo_bus_de777_to_rondo_mogilskie():
+    """Demo: Al. Pokoju -> Rondo Mogilskie by bus 124 DE777, 20 min ride, even without saying "autobusem".
+    Tryb demo -> "Wsiadam do autobusu DE777" only moves the clock, so the route stays known:
+    the ticket covers the ride to Rondo Mogilskie, not to the end of the line."""
+    r = say("Jak dojadę na Rondo Mogilskie?")
+    route = r["tools"][0]["result"]["best"]
+    ride = next(l for l in route["legs"] if l["type"] == "ride")
+    assert (ride["mode"], ride["line_number"], ride["from"], ride["to"]) == (
+        "bus", "124", "TAURON Arena Kraków Al. Pokoju", "Rondo Mogilskie")
+    assert ride["ride_min"] == 20 and ride["vehicle"]["side_number"] == "DE777"
+    assert "Autobus 124" in r["reply_text"]
+
+    assert client.post("/demo/clock", json={"offset_min": 7}).status_code == 200
+    assert client.post("/demo/gps", json={"side_number": "DE777"}).status_code == 200
+    r = say("Wsiadłem", sid=r["session_id"])
+    assert "DE777" in r["reply_text"] and "30-minutowy" in r["reply_text"]
+    r = say("tak", sid=r["session_id"])
+    prep = r["tools"][-1]["result"]
+    assert prep["side_number"] == "DE777" and prep["trip_min"] < 20 and prep["covers_trip"]
+
+
 def test_mock_data_is_consistent():
     """Guards for hand-edited mock data: every route leg rides a real line in the right
     direction, and no vehicle is on two lines (it would be in two places at once)."""
@@ -198,7 +219,7 @@ def test_pick_ticket_reduced_fare():
 
 
 def _plan_agh() -> Session:
-    """AGH from the venue: walk, wait, bus 124 (DE624), walk."""
+    """AGH from the venue: walk, wait, bus 124 (the demo bus DE777, first trip after reset), walk."""
     rt.reset_clock(0)
     s = Session()
     tools.execute(s, "plan_route", {"destination": "agh"})
@@ -216,18 +237,21 @@ def test_ticket_before_boarding_follows_the_plan():
 
 def test_ticket_on_the_planned_bus_uses_its_live_eta():
     s = _plan_agh()
-    rt.reset_clock(7)  # DE624 has just left the venue
-    eta = next(x["eta_min"] for x in rt.vehicle_status("DE624")["remaining_stops"] if x["name"] == "AGH / UR")
-    assert wallet.trip_minutes(s, "DE624") == eta
+    bus = s.plan["legs"][-1]["vehicle"]["side_number"]
+    rt.reset_clock(7)  # the planned bus has just left the venue
+    eta = next(x["eta_min"] for x in rt.vehicle_status(bus)["remaining_stops"] if x["name"] == "AGH / UR")
+    assert wallet.trip_minutes(s, bus) == eta
 
 
 def test_ticket_on_a_later_bus_is_not_too_short():
-    """The user missed DE624 and took the next 124: the planned arrival time would leave ~4 min,
-    the live ETA of the bus they are on says ~23."""
+    """The user missed the planned bus and took the next 124: the planned arrival time would leave
+    a few minutes, the live ETA of the bus they are on says ~23."""
     s = _plan_agh()
+    rotation = rt.LINES["B124"]["vehicle_rotation"]
+    later = rotation[(rotation.index(s.plan["legs"][-1]["vehicle"]["side_number"]) + 1) % len(rotation)]
     rt.reset_clock(30)
-    eta = next(x["eta_min"] for x in rt.vehicle_status("DE625")["remaining_stops"] if x["name"] == "AGH / UR")
-    s.current_vehicle = "DE625"
+    eta = next(x["eta_min"] for x in rt.vehicle_status(later)["remaining_stops"] if x["name"] == "AGH / UR")
+    s.current_vehicle = later
     prep = tools.execute(s, "prepare_ticket", {}).result
     assert prep["trip_min"] == eta and prep["covers_trip"]
     assert prep["ticket"]["valid_min"] >= eta + wallet.TICKET_MARGIN_MIN
@@ -261,7 +285,8 @@ def test_ticket_on_a_vehicle_off_the_plan_covers_the_end_of_the_line():
 def test_explicit_short_ticket_is_flagged():
     s = _plan_agh()
     rt.reset_clock(7)
-    prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": "DE624"}).result
+    bus = s.plan["legs"][-1]["vehicle"]["side_number"]
+    prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": bus}).result
     assert prep["ticket_id"] == "kmk_15min_n" and prep["covers_trip"] is False
 
 

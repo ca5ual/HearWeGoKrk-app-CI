@@ -282,6 +282,7 @@
    "first_departure_offset_min": 6,
    "headway_min": 15,
    "vehicle_rotation": [
+    "DE777",
     "DE624",
     "DE625",
     "DE627",
@@ -822,6 +823,18 @@
    "air_conditioning": true,
    "boarding_hint_pl": "Autobus przegubowy elektryczny, rampa przy drugich drzwiach.",
    "boarding_hint_en": "Electric articulated bus, ramp at the second door.",
+   "source": "illustrative"
+  },
+  {
+   "side_number": "DE777",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
    "source": "illustrative"
   }
  ]

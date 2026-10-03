@@ -139,6 +139,14 @@ def demo_reset(req: ResetReq = ResetReq()):
     return {"ok": True, "sim_minute": round(rt.now_min(), 1)}
 
 
+@app.post("/demo/clock")
+def demo_clock(req: ResetReq):
+    """Jump the simulation clock to `offset_min` and keep conversations, wallet and fake GPS:
+    "Jak dojadę na Rondo Mogilskie?" -> jump to when DE777 has left -> "Wsiadłem" still knows the route."""
+    rt.reset_clock(req.offset_min)
+    return {"ok": True, "sim_minute": round(rt.now_min(), 1)}
+
+
 @app.post("/demo/gps")
 def demo_gps(req: GpsReq):
     """Fake the user's GPS for every session: inside a running vehicle, or at a fixed point."""

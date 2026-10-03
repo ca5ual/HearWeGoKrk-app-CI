@@ -93,15 +93,17 @@ It rewrites `ttss_snapshot.json`, `stops.json` and `lines_and_vehicles.json`; he
 boarding hints and the demo vehicle order are set at the top of the script.
 
 ⚠️ **Hand-added data the script does not know about** and would drop: bus 424 and its vehicles
-(DE630, DE631, BH085, DN001), the extra bus 124 stops (TAURON Arena Kraków, Wieczysta, Brodowicza,
-Narzymskiego) with their travel times, and the new stops in `stops.json`. Don't run the script
+(DE630, DE631, BH085, DN001), the demo bus **DE777** (first in the bus 124 rotation), the extra bus 124
+stops (TAURON Arena Kraków, Wieczysta, Brodowicza, Narzymskiego) with their travel times, and the new
+stops in `stops.json`. Rondo Mogilskie in `routes.json` has bus 124 itineraries only (demo). Don't run the script
 before the demo, or re-apply these edits after it. `tests/test_backend.py::test_mock_data_is_consistent`
 catches broken references after any edit.
 
 **Before the demo, call `POST /demo/reset`** (or Ustawienia → Tryb demo → Reset demo): the first tram 14 is then
 the high-floor RZ105 running 3 min late, and the next one (HY712) is low-floor. That is scenario S5. RZ105 is not
 from TTSS (`"source": "illustrative"`): Kraków's live fleet no longer has fully high-floor trams. The bus 424 fleet
-is illustrative too; every vehicle marked `ttss` is in `ttss_snapshot.json` (a test checks it).
+and the demo bus DE777 are illustrative too; every vehicle marked `ttss` is in `ttss_snapshot.json` (a test checks it).
+The first bus 124 after a reset is **DE777**: it leaves Al. Pokoju at minute 6 and reaches Rondo Mogilskie 20 min later.
 With a 12-minute offset tram 12 **HG935** is on the road: that's the vehicle the ticket demo boards.
 
 ⚠️ Ticket prices are placeholders (check ztp.krakow.pl).
@@ -176,6 +178,7 @@ Server → client:
 | `GET /tools/schemas` | tool definitions passed to Claude |
 | `POST /agent/text` · `GET /sessions/{id}/log` | talk to the agent without the phone; action log of a session |
 | `POST /demo/reset` (`offset_min`) | restart clock and wallet, clear fake GPS, reset open WebSocket sessions |
+| `POST /demo/clock` (`offset_min`) | jump the clock only; conversations, planned route and wallet stay |
 | `POST /demo/gps` (`side_number` or `lat`+`lon`) · `DELETE /demo/gps` | fake GPS for the stage |
 
 ## 6. Agent behaviour rules (in the system prompt and the rule-based brain)
@@ -196,12 +199,16 @@ Server → client:
 1. Ustawienia → Tryb demo → **Reset demo (start)**. Phone is mirrored and the screen reader is on.
 2. "Jak dojadę na Rynek?" → route, ETA, low-floor.
 3. "Kiedy następna czternastka?" → high-floor warning, then an offer to wait for the next low-floor one.
-4. Tryb demo → **Wsiadam do HG935 (+12 min)** (fake GPS) → "Wsiadłem" →
-   "Jesteś w linii 12, pojazd HG935. Kupić bilet 30-minutowy lub na 1 przejazd, normalny?"
-   (no destination known, so the ticket covers the 27 min to the end of the line).
-   Without GPS the user can also say the side number: "Jestem w HG 935".
-5. "Tak" → confirmation with parameters → "Tak" → ticket.
-6. Fallback: play the backup video.
+4. "Jak dojadę na Rondo Mogilskie?" → "Autobus 124 z przystanku TAURON Arena Kraków Al. Pokoju za 2 minuty, …,
+   niskopodłogowy. Na miejscu o …" (20 min ride, bus DE777).
+5. Tryb demo → **Wsiadam do autobusu DE777 (+7 min)** (moves the clock and fake GPS, keeps the conversation) →
+   "Wsiadłem" → "Jesteś w linii 124, pojazd DE777. Kupić bilet 30-minutowy lub na 1 przejazd, normalny?"
+   (19 min left to Rondo Mogilskie + 3 min margin). Without GPS: "Jestem w DE 777".
+6. "Tak" → confirmation with parameters → "Tak" → ticket.
+7. Fallback: play the backup video.
+
+Alternative ticket demo without a planned route: Tryb demo → **Wsiadam do HG935 (+12 min)** (this one resets the
+conversation) → "Wsiadłem" → a 30-minute ticket for the 27 min to the end of line 12.
 
 ## 8. Known issues
 

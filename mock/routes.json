@@ -208,24 +208,6 @@
               "minutes": 4,
               "meters": 320,
               "to": "tauron_arena",
-              "instruction_pl": "Idź na południe do przystanku TAURON Arena Kraków Al. Pokoju. Przejście ma sygnalizację dźwiękową.",
-              "instruction_en": "Walk south to the TAURON Arena Kraków Al. Pokoju stop. The crossing has an audible signal."
-            },
-            {
-              "type": "ride",
-              "line": "T14",
-              "from": "tauron_arena",
-              "to": "rondo_mogilskie"
-            }
-          ]
-        },
-        {
-          "legs": [
-            {
-              "type": "walk",
-              "minutes": 4,
-              "meters": 320,
-              "to": "tauron_arena",
               "instruction_pl": "Idź na południe do przystanku autobusowego TAURON Arena Kraków Al. Pokoju. Przejście ma sygnalizację dźwiękową.",
               "instruction_en": "Walk south to the TAURON Arena Kraków Al. Pokoju bus stop. The crossing has an audible signal."
             },

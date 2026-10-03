@@ -1,4 +1,4 @@
-// Profile / settings + hidden demo controls (README 4.3: /demo/reset, /demo/gps).
+// Profile / settings + hidden demo controls (README 5.3: /demo/reset, /demo/clock, /demo/gps).
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
 
@@ -68,6 +68,15 @@ export default function Settings() {
               onPress={run("HG935", async () => {
                 await api.demoReset(backendUrl, 12);
                 await api.demoGps(backendUrl, "HG935");
+              })}
+            />
+            <Button
+              kind="plain"
+              label="Wsiadam do autobusu DE777 (+7 min)"
+              accessibilityHint="Przesuwa czas i GPS do autobusu 124 na Rondo Mogilskie. Rozmowa i trasa zostają."
+              onPress={run("DE777", async () => {
+                await api.demoClock(backendUrl, 7); // no reset: the planned route stays known
+                await api.demoGps(backendUrl, "DE777");
               })}
             />
             <Button kind="plain" label="Wyczyść sztuczny GPS" onPress={run("GPS", () => api.demoGpsClear(backendUrl))} />
