@@ -195,7 +195,11 @@
       "name": "Rondo Mogilskie",
       "aliases": [
         "rondo mogilskie",
-        "mogilskie"
+        "mogilskie",
+        "rondo mogilskie autobus",
+        "autobus na rondo mogilskie",
+        "124 na rondo mogilskie",
+        "autobus 124"
       ],
       "itineraries": [
         {
@@ -212,6 +216,42 @@
               "type": "ride",
               "line": "T14",
               "from": "tauron_arena",
+              "to": "rondo_mogilskie"
+            }
+          ]
+        },
+        {
+          "legs": [
+            {
+              "type": "walk",
+              "minutes": 4,
+              "meters": 320,
+              "to": "tauron_arena",
+              "instruction_pl": "Idź na południe do przystanku autobusowego TAURON Arena Kraków Al. Pokoju. Przejście ma sygnalizację dźwiękową.",
+              "instruction_en": "Walk south to the TAURON Arena Kraków Al. Pokoju bus stop. The crossing has an audible signal."
+            },
+            {
+              "type": "ride",
+              "line": "B124",
+              "from": "tauron_arena",
+              "to": "rondo_mogilskie"
+            }
+          ]
+        },
+        {
+          "legs": [
+            {
+              "type": "walk",
+              "minutes": 2,
+              "meters": 180,
+              "to": "tauron_arena_krakow",
+              "instruction_pl": "Wyjdź przed wejście główne TAURON Areny na przystanek autobusowy na ulicy Lema.",
+              "instruction_en": "Walk to the front of the TAURON Arena main entrance to the bus stop on Lema street."
+            },
+            {
+              "type": "ride",
+              "line": "B124",
+              "from": "tauron_arena_krakow",
               "to": "rondo_mogilskie"
             }
           ]
