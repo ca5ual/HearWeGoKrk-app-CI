@@ -2,26 +2,39 @@
 // ("Moja lokalizacja") and there is no time picker yet.
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
 
 import { useAgent } from "@/agent/AgentContext";
 import { api } from "@/api";
+import { RouteCard } from "@/components/route";
 import { Button, Card, T } from "@/components/ui";
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 
+// Destinations the backend knows (mock/routes.json); one tap searches.
+const QUICK = ["Rynek", "AGH", "Dworzec Główny", "Bronowice"];
+
 export default function RouteSearch() {
-  const { backendUrl, setRouteResult } = useAgent();
-  const [dest, setDest] = useState("");
+  const { backendUrl, setRouteResult, ui } = useAgent();
+  const last = ui.route_results;
+  const lastDest = last?.status === "ok" || last?.status === "no_route" ? last.destination : "";
+  const [dest, setDest] = useState(lastDest);
+
+  // A route asked by voice (or found here) -> keep its destination in the input.
+  const [followed, setFollowed] = useState(last);
+  if (last !== followed) {
+    setFollowed(last);
+    if (lastDest) setDest(lastDest);
+  }
   const [lowFloor, setLowFloor] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = async () => {
-    if (!dest.trim()) return;
+  const search = async (to = dest) => {
+    if (!to.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      setRouteResult(await api.route(backendUrl, dest.trim(), lowFloor));
+      setRouteResult(await api.route(backendUrl, to.trim(), lowFloor));
       router.push("/route/results");
     } catch {
       setError("Nie udało się połączyć z serwerem.");
@@ -32,61 +45,96 @@ export default function RouteSearch() {
 
   return (
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-      <Card style={{ gap: space(3) }}>
-        <View style={styles.field} accessible accessibilityLabel="Skąd: moja lokalizacja">
-          <T variant="muted" size={13}>Skąd</T>
-          <T variant="title" size={18}>📍 Moja lokalizacja</T>
-        </View>
-        <View style={styles.field}>
-          <T variant="muted" size={13}>Dokąd</T>
-          <TextInput
-            value={dest}
-            onChangeText={setDest}
-            onSubmitEditing={search}
-            placeholder="np. Rynek, AGH, Dworzec Główny"
-            placeholderTextColor={colors.textMuted}
-            accessibilityLabel="Dokąd"
-            returnKeyType="search"
-            style={styles.input}
+      <View style={{ gap: space(1) }}>
+        <T variant="title" size={28} accessibilityRole="header">Dokąd jedziesz?</T>
+        <T variant="muted">Z: 📍 Twoja lokalizacja · odjazd teraz</T>
+      </View>
+
+      <TextInput
+        value={dest}
+        onChangeText={setDest}
+        onSubmitEditing={() => search()}
+        placeholder="Wpisz cel podróży"
+        placeholderTextColor={colors.textMuted}
+        accessibilityLabel="Dokąd jedziesz"
+        returnKeyType="search"
+        style={styles.input}
+      />
+      <Button label={busy ? "Szukam…" : "Szukaj trasy"} onPress={() => search()} disabled={busy || !dest.trim()} />
+      {error ? <T color={colors.delay}>{error}</T> : null}
+
+      {last?.status === "ok" ? (
+        <View style={{ gap: space(2) }}>
+          <T variant="muted" accessibilityRole="header">Ostatnio wyszukana trasa</T>
+          <RouteCard
+            it={last.best}
+            dataSource={last.data_source}
+            title={`Do: ${last.destination}`}
+            onPress={() => router.push("/route/results")}
           />
         </View>
+      ) : null}
+
+      <View style={{ gap: space(2) }}>
+        <T variant="muted" accessibilityRole="header">Szybki wybór</T>
+        <View style={styles.quick}>
+          {QUICK.map((q) => (
+            <Pressable
+              key={q}
+              onPress={() => {
+                setDest(q);
+                search(q);
+              }}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel={`Trasa do: ${q}`}
+              style={({ pressed }) => [styles.quickItem, { opacity: pressed ? 0.75 : 1 }]}
+            >
+              <T variant="title" size={17}>{q}</T>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <Card style={styles.option}>
+        <View style={{ flex: 1 }}>
+          <T variant="title" size={17}>♿ Pojazdy niskopodłogowe</T>
+          <T variant="muted" size={14}>Wybieraj tramwaje i autobusy bez stopni</T>
+        </View>
+        <Switch
+          value={lowFloor}
+          onValueChange={setLowFloor}
+          accessibilityLabel="Preferuj pojazdy niskopodłogowe"
+          trackColor={{ true: colors.accent, false: colors.surfaceAlt }}
+        />
       </Card>
 
-      <View style={styles.pills}>
-        <View style={styles.pill} accessible accessibilityLabel="Odjazd: teraz">
-          <T variant="title" size={15}>Teraz</T>
-        </View>
-        <View style={[styles.pill, { flexDirection: "row", gap: space(2), alignItems: "center" }]}>
-          <T variant="title" size={15}>♿ Niskopodłogowe</T>
-          <Switch
-            value={lowFloor}
-            onValueChange={setLowFloor}
-            accessibilityLabel="Preferuj pojazdy niskopodłogowe"
-            trackColor={{ true: colors.accent, false: colors.surfaceAlt }}
-          />
-        </View>
-      </View>
-
-      <View style={[styles.pill, { alignSelf: "flex-start" }]} accessible accessibilityLabel="Dane na żywo dostępne">
-        <T size={14} color={colors.live}>((•)) dane na żywo</T>
-      </View>
-
-      {error ? <T color={colors.delay}>{error}</T> : null}
-      <Button label={busy ? "Szukam…" : "Pokaż trasy →"} onPress={search} disabled={busy || !dest.trim()} />
+      <T variant="muted" size={14}>
+        <T size={14} color={colors.live}>● </T>
+        Odjazdy liczone z danych na żywo. Możesz też zapytać głosem w zakładce Mów.
+      </T>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { padding: space(4), gap: space(4) },
-  field: { gap: space(1), backgroundColor: colors.surfaceAlt, borderRadius: radius.chip, padding: space(3) },
-  input: { color: colors.text, fontFamily: font.title, fontSize: 18, minHeight: MIN_TOUCH, padding: 0 },
-  pills: { flexDirection: "row", gap: space(2), flexWrap: "wrap" },
-  pill: {
+  page: { padding: space(4), gap: space(5), paddingBottom: space(12) },
+  input: {
+    minHeight: MIN_TOUCH + 16,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.chip,
+    paddingHorizontal: space(4),
+    color: colors.text,
+    fontFamily: font.title,
+    fontSize: 20,
+  },
+  quick: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
+  quickItem: {
     backgroundColor: colors.surface,
-    borderRadius: radius.pill,
+    borderRadius: radius.chip,
     paddingHorizontal: space(4),
     minHeight: MIN_TOUCH,
     justifyContent: "center",
   },
+  option: { flexDirection: "row", alignItems: "center", gap: space(3) },
 });

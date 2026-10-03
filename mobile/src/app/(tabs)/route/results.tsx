@@ -8,7 +8,7 @@ import { api } from "@/api";
 import { TicketFab } from "@/components/money";
 import { RouteCard } from "@/components/route";
 import { Button, Card, T } from "@/components/ui";
-import { colors, space } from "@/theme";
+import { space } from "@/theme";
 
 export default function RouteResults() {
   const { ui, backendUrl, setRouteResult } = useAgent();
@@ -36,22 +36,23 @@ export default function RouteResults() {
 
         {r?.status === "ok" ? (
           <>
-            <View style={styles.header} accessible accessibilityLabel={`Z mojej lokalizacji do: ${r.destination}`}>
-              <View style={styles.dots}>
-                <View style={[styles.dot, { backgroundColor: colors.depart }]} />
-                <View style={styles.line} />
-                <View style={[styles.dot, { backgroundColor: colors.arrive }]} />
-              </View>
-              <View style={{ gap: space(4) }}>
-                <T variant="muted">Moja lokalizacja</T>
-                <T variant="title">{r.destination}</T>
-              </View>
+            <View accessible accessibilityRole="header" accessibilityLabel={`Trasy do: ${r.destination}`}>
+              <T variant="muted">Trasy do</T>
+              <T variant="title" size={26}>{r.destination}</T>
             </View>
             {[r.best, ...r.alternatives].map((it, i) => (
-              <RouteCard key={i} it={it} dataSource={r.data_source} onPress={() => router.push(`/route/${i}`)} />
+              <RouteCard
+                key={i}
+                it={it}
+                dataSource={r.data_source}
+                title={i === 0 ? "Polecana trasa" : `Inna trasa ${i}`}
+                onPress={() => router.push(`/route/${i}`)}
+              />
             ))}
           </>
         ) : null}
+
+        <Button kind="plain" label="Zmień cel podróży" onPress={() => router.navigate("/route")} />
       </ScrollView>
       <TicketFab />
     </View>
@@ -60,8 +61,4 @@ export default function RouteResults() {
 
 const styles = StyleSheet.create({
   page: { padding: space(4), gap: space(3), paddingBottom: space(24) },
-  header: { flexDirection: "row", gap: space(3), paddingVertical: space(2) },
-  dots: { alignItems: "center", paddingVertical: space(1) },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  line: { flex: 1, width: 2, backgroundColor: colors.textMuted, marginVertical: 2 },
 });

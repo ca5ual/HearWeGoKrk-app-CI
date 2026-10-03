@@ -1,5 +1,5 @@
 // REST calls (README 4.3). Everything spoken goes over the WebSocket; these feed the companion screens.
-import type { Departure, RouteResult, Stop, Ticket, Wallet } from "./types";
+import type { Departure, RouteResult, Stop, Wallet } from "./types";
 
 async function req<T>(base: string, path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(base + path, {
@@ -20,7 +20,6 @@ export const api = {
       body: JSON.stringify({ destination, prefer_low_floor: preferLowFloor }),
     }),
   wallet: (b: string) => req<Wallet>(b, "/wallet"),
-  catalog: (b: string) => req<Ticket[]>(b, "/tickets/catalog"),
   demoReset: (b: string, offsetMin = 0) =>
     req(b, "/demo/reset", { method: "POST", body: JSON.stringify({ offset_min: offsetMin }) }),
   demoGps: (b: string, sideNumber: string) =>

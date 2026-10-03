@@ -7,11 +7,18 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native
 import { useAgent } from "@/agent/AgentContext";
 import { api } from "@/api";
 import { DepartureRow } from "@/components/route";
-import { Card, T } from "@/components/ui";
+import { Button, Card, T } from "@/components/ui";
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
-import type { Departure, Mode, Stop } from "@/types";
+import type { Departure, Stop } from "@/types";
 
 const DEMO_ORIGIN = "tauron_arena";
+
+type ModeFilter = "all" | "tram" | "bus";
+const MODE_FILTERS: readonly (readonly [ModeFilter, string])[] = [
+  ["all", "Wszystkie"],
+  ["tram", "Tramwaje"],
+  ["bus", "Autobusy"],
+];
 
 export default function Departures() {
   const { backendUrl, ui } = useAgent();
@@ -19,7 +26,7 @@ export default function Departures() {
   const [stopId, setStopId] = useState(ui.departures?.stop_id ?? DEMO_ORIGIN);
   const [deps, setDeps] = useState<Departure[] | null>(null);
   const [query, setQuery] = useState("");
-  const [modes, setModes] = useState<Record<Mode, boolean>>({ tram: true, bus: true, train: true });
+  const [mode, setMode] = useState<ModeFilter>("all");
 
   useEffect(() => {
     api.stops(backendUrl).then(setStops).catch(() => {});
@@ -51,65 +58,79 @@ export default function Departures() {
   );
 
   const q = query.trim().toLowerCase();
+  const line = /^\d+$/.test(q) ? q : null;
   const stopMatches = useMemo(
-    () => (q && !/^\d+$/.test(q) ? stops.filter((s) => s.name.toLowerCase().includes(q)) : []),
-    [q, stops],
+    () => (q && !line ? stops.filter((s) => s.name.toLowerCase().includes(q)) : []),
+    [q, line, stops],
   );
   const shown = (deps ?? []).filter(
-    (d) => modes[d.mode] && (!/^\d+$/.test(q) || d.line_number === q),
+    (d) => (mode === "all" || d.mode === mode) && (!line || d.line_number === line),
   );
   const stop = stops.find((s) => s.id === stopId);
 
   return (
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+      <View accessible accessibilityRole="header" accessibilityLabel={`Przystanek ${stop?.name ?? stopId}`}>
+        <T variant="muted">Przystanek</T>
+        <T variant="title" size={28}>{stop?.name ?? stopId}</T>
+      </View>
+
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="Wyszukaj linię lub przystanek…"
+        placeholder="Zmień przystanek lub wpisz nr linii"
         placeholderTextColor={colors.textMuted}
-        accessibilityLabel="Wyszukaj linię lub przystanek"
+        accessibilityLabel="Zmień przystanek albo wpisz numer linii"
         style={styles.input}
       />
-      {stopMatches.map((s) => (
-        <Pressable
-          key={s.id}
-          onPress={() => {
-            setStopId(s.id);
-            setQuery("");
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`Przystanek ${s.name}`}
-          style={styles.match}
-        >
-          <T>{s.name}</T>
-        </Pressable>
-      ))}
+      {stopMatches.length ? (
+        <Card style={{ padding: space(2), gap: space(1) }}>
+          {stopMatches.map((s) => (
+            <Pressable
+              key={s.id}
+              onPress={() => {
+                setStopId(s.id);
+                setQuery("");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Pokaż odjazdy z przystanku ${s.name}`}
+              style={({ pressed }) => [styles.match, pressed && { backgroundColor: colors.surfaceAlt }]}
+            >
+              <T variant="title" size={17}>📍 {s.name}</T>
+            </Pressable>
+          ))}
+        </Card>
+      ) : null}
 
-      <View style={styles.chips}>
-        {(
-          [
-            ["tram", "Tramwaje"],
-            ["bus", "Autobusy"],
-          ] as const
-        ).map(([m, label]) => (
+      <View style={styles.seg} accessibilityRole="tablist">
+        {MODE_FILTERS.map(([m, label]) => (
           <Pressable
             key={m}
-            onPress={() => setModes((x) => ({ ...x, [m]: !x[m] }))}
-            accessibilityRole="checkbox"
+            onPress={() => setMode(m)}
+            accessibilityRole="tab"
             accessibilityLabel={label}
-            accessibilityState={{ checked: modes[m] }}
-            style={[styles.chip, modes[m] && { backgroundColor: colors.accent }]}
+            accessibilityState={{ selected: mode === m }}
+            style={[styles.segItem, mode === m && { backgroundColor: colors.accent }]}
           >
             <T variant="title" size={15}>{label}</T>
           </Pressable>
         ))}
       </View>
 
-      <T variant="title" accessibilityRole="header">Odjazdy</T>
-      <Card>
-        <T variant="title" size={18}>{stop?.name ?? stopId} ›</T>
-        {deps === null ? <T variant="muted">Brak danych.</T> : null}
-        {deps && !shown.length ? <T variant="muted">Brak odjazdów.</T> : null}
+      {line ? (
+        <View style={styles.lineFilter}>
+          <T variant="title" size={17} style={{ flex: 1 }}>Tylko linia {line}</T>
+          <Button kind="plain" label="Pokaż wszystkie" onPress={() => setQuery("")} />
+        </View>
+      ) : null}
+
+      <View style={styles.listHead}>
+        <T variant="title" accessibilityRole="header">Najbliższe odjazdy</T>
+        <T variant="muted" size={13}>odświeżane co 30 s</T>
+      </View>
+      <Card style={{ paddingVertical: space(1) }}>
+        {deps === null ? <T variant="muted" style={styles.empty}>Brak danych.</T> : null}
+        {deps && !shown.length ? <T variant="muted" style={styles.empty}>Brak odjazdów.</T> : null}
         {shown.map((d, i) => <DepartureRow key={`${d.line_id}-${d.departure_time}-${i}`} d={d} />)}
       </Card>
     </ScrollView>
@@ -117,23 +138,20 @@ export default function Departures() {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: space(4), gap: space(3), paddingBottom: space(12) },
+  page: { padding: space(4), gap: space(4), paddingBottom: space(12) },
   input: {
     minHeight: MIN_TOUCH + 8,
     backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.pill,
-    paddingHorizontal: space(5),
+    borderRadius: radius.chip,
+    paddingHorizontal: space(4),
     color: colors.text,
     fontFamily: font.body,
     fontSize: 17,
   },
-  match: { backgroundColor: colors.surface, borderRadius: radius.chip, padding: space(3), minHeight: MIN_TOUCH, justifyContent: "center" },
-  chips: { flexDirection: "row", gap: space(2) },
-  chip: {
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.pill,
-    paddingHorizontal: space(4),
-    minHeight: MIN_TOUCH,
-    justifyContent: "center",
-  },
+  match: { borderRadius: radius.chip, padding: space(3), minHeight: MIN_TOUCH, justifyContent: "center" },
+  seg: { flexDirection: "row", backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, padding: 4 },
+  segItem: { flex: 1, minHeight: MIN_TOUCH, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+  lineFilter: { flexDirection: "row", alignItems: "center", gap: space(3), flexWrap: "wrap" },
+  listHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap" },
+  empty: { paddingVertical: space(3) },
 });

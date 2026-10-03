@@ -1,9 +1,10 @@
 # FRONTEND.md — HearWeGoKrk mobile app (instructions for the coding agent)
 
 You are building the React Native (Expo) app for **HearWeGoKrk**, a voice-first transit assistant
-for blind people in Kraków. The screens are **inspired by the layout of Jakdojade**, a popular
-Polish transit app. Copy the information architecture, not the brand: no Jakdojade name,
-logo, colours one-to-one, or ads. Use the HearWeGoKrk name and the tokens below.
+for blind people in Kraków. The Trasa and Rozkłady screens use their own simple style, not the dense
+style of typical transit apps: large type, one idea per row, plain words instead of icon-only chips,
+and labelled values ("Odjazd 13:28", "Wysiądź: Rynek") instead of colour-coded pills.
+Use the HearWeGoKrk name and the tokens below.
 
 The voice agent is the primary interface. Every screen below is also a **companion view**:
 the agent's tool results are rendered here, so a sighted companion can read along and the
@@ -42,7 +43,7 @@ export const space = (n: number) => n * 4;
 
 - Font: one bold geometric sans (e.g. Manrope or Inter via `expo-font`). Weights: 800 for big numbers, 700 for titles, 500 for body.
 - Must respect system font scaling (`allowFontScaling` stays on). Layouts must survive 200% text.
-- Touch targets ≥ 48×48 dp. The talk button is ≥ 160 dp.
+- Touch targets ≥ 48×48 dp. The talk button fills most of the Mów screen.
 - **Never use colour alone**: a delay is red **and** says "opóźniony o 4 min".
 
 ## 3. Navigation
@@ -54,36 +55,26 @@ Bottom tabs (labels in Polish, icons + text):
 | **Mów** | `/` | Voice home: big talk button, live transcript, last agent result |
 | **Trasa** | `/route` | Route search + results + route detail |
 | **Rozkłady** | `/departures` | Departures board for nearby / chosen stops |
-| **Bilety** | `/tickets` | Ticket shop + "Twoje bilety" |
 
 Header on every tab: screen title on the left, **balance chip** (e.g. `20,14 zł`) and a profile icon on the right.
 
-When the agent sends a `ui` message, navigate to the matching screen and render its data (section 6).
+When the agent sends a `ui` message, store its data so the matching screen shows it. **Do not navigate automatically**: the user stays on the current screen and opens the result from the "Tekst rozmowy" panel or the tabs.
 
 ## 4. Shared components
 
-### `LineBadge`
-- Props: `{ mode: "tram" | "bus" | "train", number: string, lowFloor?: "full" | "partial" | "none" }`
-- Look: mode icon + rounded outlined box with the line number (bold). If `lowFloor` is "full" or "partial", show a small ♿ marker; if "none", show a small warning marker "stopnie".
-- a11y label: `"tramwaj 14, niskopodłogowy"` / `"autobus 152"`.
+Pair every colour or icon with words that say the same thing.
 
-### `TimeChip`
-- Props: `{ time: "13:28", kind: "depart" | "arrive" | "planned" }`
-- A filled pill (green for depart, blue for arrive). `planned` = struck-through grey text, used next to a delayed time.
+### `LineBox`
+- A filled box with the line number in large type and the mode underneath ("14" / "tramwaj"). Decorative: the row's a11y label covers it.
 
-### `WalkSegment`
-- Walking icon + `"4 min"`. a11y: `"dojście 4 minuty"`.
+### `LowFloorNote`
+- `"♿ niskopodłogowy"` / `"♿ częściowo niskopodłogowy"` in green, `"⚠ wysokie stopnie"` in red.
 
 ### `LiveIndicator`
-- A small "((•))" broadcast icon. Green = live and on time, red = live and delayed, hidden = timetable only.
-- a11y: `"dane na żywo"` or `"według rozkładu"`. This maps to `data_source` from the backend.
-
-### `CountdownBig`
-- `"Odjazd za:"` small label above a huge number + `"min"`. Numbers below 10 are zero-padded ("05").
-- Updates every 30 s. Do **not** put it in an `accessibilityLiveRegion` (too chatty). Announce only changes ≥ 2 min or a new delay, via `AccessibilityInfo.announceForAccessibility`.
+- Text `"● na żywo"` (green, or red when delayed), or muted `"według rozkładu"`. Maps to `data_source` from the backend.
 
 ### `TalkButton`
-- A big circle in the accent colour, centred. States: idle / listening (pulsing ring) / thinking (spinner) / speaking (waveform).
+- A large rounded panel in the accent colour that fills the space it is given. States: idle / listening (pulsing border) / thinking (spinner) / speaking (waveform).
 - Haptics: `impactAsync(Medium)` on press, `notificationAsync(Success)` when a reply starts.
 - a11y: role button, label `"Mów do asystenta"`, hint `"Przytrzymaj i mów"`.
 
@@ -93,53 +84,44 @@ When the agent sends a `ui` message, navigate to the matching screen and render 
 ## 5. Screens
 
 ### 5.1 Voice home (`/`)
-- The centre of the screen is the `TalkButton`.
-- Above it: the agent's last reply text, in large type.
-- Below it: the user's transcript in muted text.
-- A "Powtórz" button replays the last audio reply.
-- Below that: a compact card with the last result (e.g. the best route), which opens the full screen when tapped.
-- An empty state lists 3 example phrases ("Jak dojadę na Rynek?", "Kiedy następna czternastka?", "Kup bilet"). This solves voice discoverability.
+- The `TalkButton` fills most of the screen (a large rounded panel), so a blind user can hit it without aiming.
+- No text input: the app is used by speaking.
+- Under it, small buttons: **"💬 Tekst rozmowy"** and, once there is a reply, **"🔁 Powtórz"** (replays the last audio).
+- "Tekst rozmowy" opens a full-screen panel: the user's transcript, the agent's reply in large type, the last result card (tap opens the full screen), and, before the first question, 3 example phrases ("Jak dojadę na Rynek?", "Kiedy następna czternastka?", "Kup bilet") for discoverability.
+- The connection warning and ticket notices stay on the main screen, above the button.
 
-### 5.2 Route search (`/route`) — reference: Jakdojade screenshot 2
-- Two stacked inputs: origin (default "Moja lokalizacja") and destination, with a swap button.
-- A time selector pill ("15:55 ▾") and an "Opcje" pill (toggles: prefer low-floor, max walk).
-- A footer pill showing live-data coverage (e.g. "((•)) dane na żywo").
-- A big green primary button: "Pokaż trasy →".
+### 5.2 Route search (`/route`)
+- Heading "Dokąd jedziesz?", with the origin under it ("Z: Twoja lokalizacja · odjazd teraz"). The backend plans from the user's position only.
+- One large destination input and a "Szukaj trasy" button.
+- "Szybki wybór": one-tap buttons for known destinations (Rynek, AGH, Dworzec Główny, Bronowice).
+- A low-floor option card with a switch, and a note that the data is live and voice works too.
 
-### 5.3 Route results (`/route/results`) — reference: screenshots 1 & 7
-- Header: origin → destination with a vertical dot-line connector, and a filter button.
-- A list of `RouteCard`s, one per itinerary:
-  - Left: `CountdownBig` + `LiveIndicator`.
-  - Right, row 1: the sequence of `LineBadge`s, total minutes at the far right.
-  - Right, row 2: `WalkSegment` → `TimeChip(depart)` → ride minutes → `TimeChip(arrive)` → optional final walk.
+### 5.3 Route results (`/route/results`)
+- Header "Trasy do" + destination in large type.
+- One `RouteCard` per itinerary, titled "Polecana trasa" / "Inna trasa N":
+  - Top: "za 5 min" in large type + "odjazd 13:28" on the left; total minutes + "przyjazd 14:05" on the right.
+  - Then the legs as plain lines: "🚶 Pieszo 4 min", "🚋 Tramwaj 14 → Bronowice" + `LowFloorNote`.
+  - Footer: `LiveIndicator` and "Szczegóły ›".
 - **One accessible element per card**. Example label:
-  `"Odjazd za 5 minut. Autobus 128, potem 172, potem 168. Dojście 4 minuty. Odjazd 13:28, przyjazd 14:05. Razem 41 minut. Wszystkie pojazdy niskopodłogowe."`
+  `"Polecana trasa. Odjazd za 5 minut. Autobus 128, potem 172. Dojście 4 minuty. Odjazd 13:28, przyjazd 14:05. Razem 41 minut. Wszystkie pojazdy niskopodłogowe."`
+- A "Zmień cel podróży" button at the bottom. Floating `TicketFab`.
+
+### 5.4 Route detail (`/route/[id]`)
+- The route summary card at the top, then the route as numbered step cards ("Krok 1", "Krok 2", …):
+  - Walk step: "Idź 800 m", the spoken `instruction_pl`, the time it takes, and when you arrive.
+  - Ride step: `LineBox` + "Wsiądź: tramwaj 14" + headsign; "Przystanek" and "Odjazd" rows; a vehicle box (side number in large type, model, `LowFloorNote`, `boarding_hint_pl`); "Wysiądź" and "O godzinie" rows.
+  - Goal card: "📍 destination" + "Przyjazd".
 - Floating `TicketFab`.
 
-### 5.4 Route detail (`/route/[id]`) — reference: screenshots 5 & 6
-- Sticky summary at the top (same as the `RouteCard` row).
-- A vertical timeline. The left column shows times, the rail is coloured per leg (green for the first ride, blue for the next), and the right column shows content:
-  - Origin row: `"● 15:56  Stanisława Lema 7"`.
-  - Walk row: icon, "Idź 800 m", minutes on the right. Show the spoken `instruction_pl` underneath, smaller.
-  - Ride boarding row: the planned time struck through and the real time in red if delayed; the stop name in bold; a red text line "Odjazd opóźniony o 4 min"; `LineBadge` → headsign; ride minutes; "Odjazdy co ok. 5 min"; an expandable "4 przystanki ▾".
-  - **HearWeGoKrk addition:** a vehicle row with the side number in large type, the model, and the low-floor status + `boarding_hint_pl` (e.g. "Niska podłoga tylko w środkowym członie — wsiadaj środkowymi drzwiami").
-  - Transfer row: "Poczekaj na przesiadkę · 10 min".
-  - Destination row.
-- Bottom: a "⋮" menu button on the left; `TicketFab` with the price on the right.
-- No ad banners.
-
-### 5.5 Departures board (`/departures`) — reference: screenshot 4
-- A search input "Wyszukaj linię lub przystanek…" and filter chips: Tramwaje / Autobusy.
-- A "Odjazdy" section; for each stop: the stop name + chevron, then rows of
-  `LineBadge` → headsign (truncated) · `LiveIndicator` · "za 2 min" · clock time (red if delayed, green if live and on time).
+### 5.5 Departures board (`/departures`)
+- Header "Przystanek" + stop name in large type.
+- One input "Zmień przystanek lub wpisz nr linii": a name lists matching stops, digits filter to that line. An active line filter shows "Tylko linia 14" with a "Pokaż wszystkie" button.
+- A segmented control: Wszystkie / Tramwaje / Autobusy.
+- "Najbliższe odjazdy" (refreshed every 30 s): per row, `LineBox` · "→ headsign" + `LowFloorNote` (+ "Opóźniony o 4 min (planowo 15:54)") · on the right "2 min" in large type, the clock time (red if delayed, green if live) and `LiveIndicator`.
 - a11y label per row: `"Autobus 179 w kierunku Dworzec Główny, za 2 minuty, o 15:58, na żywo, niskopodłogowy"`.
 
-### 5.6 Tickets (`/tickets`) — reference: screenshot 3
-- Segmented tabs: **Sklep** | **Twoje bilety**.
-- A Ulgowe / Normalne toggle (a pill segmented control).
-- Section "Czasowe": horizontal carousel of `TicketCard`s. Each card has a coloured header strip ("ULGOWY" / "NORMALNY"), the operator line "ZTP w Krakowie", "Strefa: I+II+III", a huge duration number ("15" / "30") + "minut" / "minut lub 1 przejazd", and the price at the bottom ("2,00 zł").
-- Data: `ticket_catalog` from `account_and_tickets.json`.
-- A carousel is hard with a screen reader. Also expose the list as a plain vertical list when `AccessibilityInfo.isScreenReaderEnabled()` is true.
+### 5.6 Tickets — removed
+- No tickets screen or tab. Buying is voice-only ("kup bilet", or the 🛒 `TicketFab` on route screens) and always ends in the 5.7 modal.
 
 ### 5.7 Ticket confirmation (modal) — HearWeGoKrk addition
 - Opened by the `pending_confirmation` message.
@@ -182,9 +164,9 @@ Write a single `renderAgentUI(payload)` switch. Unknown components are ignored, 
 
 ## 8. Build order (hackathon)
 
-1. Tokens + `LineBadge`, `TimeChip`, `CountdownBig` (with static mock props).
+1. Tokens + `LineBox`, `LowFloorNote`, `LiveIndicator` (with static mock props).
 2. Screen 5.3 route results rendering `plan_route` JSON from the mock.
 3. Voice home 5.1 with the WebSocket hooked up.
 4. Route detail 5.4 with the vehicle row.
 5. Confirmation modal 5.7 + trip-in-progress view 5.8 (needed for the demo).
-6. Departures board 5.5, tickets 5.6 (nice to have).
+6. Departures board 5.5 (nice to have).

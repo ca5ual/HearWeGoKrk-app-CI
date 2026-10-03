@@ -8,7 +8,6 @@ import {
   useAudioRecorder,
 } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api";
@@ -72,13 +71,6 @@ export function useAgent(): AgentCtx {
   return c;
 }
 
-// Which tab shows which `ui` component. ticket_confirm is the modal, driven by `pending`.
-const SCREEN_FOR: Partial<Record<Component, string>> = {
-  route_results: "/route/results",
-  departures: "/departures",
-  ticket_shop: "/tickets",
-  trip_live: "/trip",
-};
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [backendUrl, setBackendUrl] = useState(defaultBackendUrl);
@@ -97,7 +89,6 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   const ws = useRef<WebSocket | null>(null);
   const coords = useRef<Coords | null>(null);
-  const userTurn = useRef(false);            // between our utterance and the next idle: navigate on `ui`
   const reply = useRef<{ text: string; chunks: string[] } | null>(null);
   const settings = useRef({ headphones, lang });
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -168,7 +159,6 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
             if (r.chunks.length) playReplyAudio(r.chunks);
             else speakText(r.text, settings.current.lang); // backend TTS not wired yet -> phone voice
           }
-          userTurn.current = false;
         }
         break;
       case "transcript":
@@ -199,9 +189,8 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
         setUi((u) => ({ ...u, [p.component]: p.data }));
         if (p.component === "trip_live") setTrip(p.data);
         if (p.component !== "ticket_confirm") setLastUi(p);
-        const screen = SCREEN_FOR[p.component];
-        // Navigate only for results the user asked for, not for background trip updates.
-        if (screen && userTurn.current) router.navigate(screen as any);
+        // No auto-navigation: the user stays where they are (usually Mów). The tabs read `ui`,
+        // and the result card in "Tekst rozmowy" opens the full screen on demand.
         break;
       }
       case "pending_confirmation":
@@ -277,7 +266,6 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   // --- actions --------------------------------------------------------------
   const beginTurn = () => {
-    userTurn.current = true;
     stopPlayback();
     setNotice(null);
   };

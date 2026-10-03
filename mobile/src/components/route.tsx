@@ -1,11 +1,11 @@
-// RouteCard (5.3), ItineraryTimeline (5.4), DepartureRow (5.5), TripView (5.8).
+// RouteCard (5.3), ItinerarySteps (5.4), DepartureRow (5.5), TripView (5.8).
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { inMinutes, isLive, lowFloorLabel, minusMinutes, minutesPl, modeName, stopsPl } from "../format";
 import { colors, radius, space } from "../theme";
 import type { Departure, Itinerary, RideLeg, TripStatus } from "../types";
-import { CountdownBig, LineBadge, LiveIndicator, TimeChip, WalkSegment } from "./transit";
+import { LineBox, LiveIndicator, LowFloorNote, MODE_ICON, modeTitle } from "./transit";
 import { Card, T } from "./ui";
 
 const rides = (it: Itinerary) => it.legs.filter((l): l is RideLeg => l.type === "ride");
@@ -43,112 +43,144 @@ export function itineraryLabel(it: Itinerary): string {
   ].join(" ");
 }
 
-export function RouteCard({ it, dataSource, onPress }: { it: Itinerary; dataSource?: string; onPress?: () => void }) {
-  const r = rides(it);
-  const firstWalk = it.legs[0]?.type === "walk" ? it.legs[0].minutes : 0;
-  const lastLeg = it.legs[it.legs.length - 1];
+/** One itinerary: when to leave, how long it takes, and the legs in plain words. */
+export function RouteCard({
+  it,
+  dataSource,
+  title,
+  onPress,
+}: {
+  it: Itinerary;
+  dataSource?: string;
+  title?: string;
+  onPress?: () => void;
+}) {
+  const dep = minutesToDeparture(it);
+  const first = rides(it)[0];
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       accessible
-      accessibilityRole="button"
-      accessibilityLabel={itineraryLabel(it)}
-      accessibilityHint="Otwiera szczegóły trasy"
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityLabel={[title, itineraryLabel(it)].filter(Boolean).join(". ")}
+      accessibilityHint={onPress ? "Otwiera szczegóły trasy" : undefined}
+      style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
     >
-      <Card style={styles.routeCard}>
-        <View style={{ alignItems: "center", gap: space(1) }}>
-          <CountdownBig minutes={minutesToDeparture(it)} />
-          <LiveIndicator dataSource={dataSource} />
+      <Card style={{ gap: space(3) }}>
+        {title ? <T variant="title" size={15} color={colors.textMuted}>{title}</T> : null}
+        <View style={styles.between}>
+          <View>
+            <T variant="number" size={34} style={{ lineHeight: 40 }}>{dep <= 0 ? "teraz" : `za ${dep} min`}</T>
+            <T variant="muted">odjazd {first?.departure ?? "—"}</T>
+          </View>
+          <View style={{ alignItems: "flex-end" }}>
+            <T variant="title" size={22}>{it.total_min} min</T>
+            <T variant="muted">przyjazd {it.arrival}</T>
+          </View>
         </View>
-        <View style={{ flex: 1, gap: space(2) }}>
-          <View style={styles.rowWrap}>
-            {r.map((x, i) => (
-              <LineBadge key={i} mode={x.mode} number={x.line_number} lowFloor={x.vehicle.low_floor} />
-            ))}
-            <T variant="title" style={{ marginLeft: "auto" }}>{it.total_min} min</T>
-          </View>
-          <View style={styles.rowWrap}>
-            {firstWalk ? <WalkSegment minutes={firstWalk} /> : null}
-            {r[0] ? <TimeChip time={r[0].departure} kind="depart" /> : null}
-            {r[0] ? <T variant="muted">{r.reduce((n, x) => n + x.ride_min, 0)} min</T> : null}
-            <TimeChip time={it.arrival} kind="arrive" />
-            {lastLeg?.type === "walk" && it.legs.length > 1 ? <WalkSegment minutes={lastLeg.minutes} /> : null}
-          </View>
+        <View style={styles.legs}>
+          {it.legs.map((leg, i) =>
+            leg.type === "walk" ? (
+              <T key={i} variant="muted">🚶 Pieszo {leg.minutes} min</T>
+            ) : (
+              <View key={i} style={{ gap: 2 }}>
+                <T variant="title" size={17}>
+                  {MODE_ICON[leg.mode]} {modeTitle(leg.mode)} {leg.line_number} → {leg.headsign}
+                </T>
+                <LowFloorNote lowFloor={leg.vehicle.low_floor} />
+              </View>
+            ),
+          )}
+        </View>
+        <View style={styles.between}>
+          <LiveIndicator dataSource={dataSource} />
+          {onPress ? <T variant="title" size={16}>Szczegóły ›</T> : null}
         </View>
       </Card>
     </Pressable>
   );
 }
 
-export function ItineraryTimeline({ it }: { it: Itinerary }) {
-  let rideIdx = 0;
+/** Route detail as numbered steps: one card per thing the user has to do. */
+export function ItinerarySteps({ it, destination }: { it: Itinerary; destination: string }) {
   return (
-    <View style={{ gap: space(1) }}>
+    <View style={{ gap: space(3) }}>
       {it.legs.map((leg, i) => {
+        const step = `Krok ${i + 1}`;
         if (leg.type === "walk") {
           return (
-            <TimelineRow key={i} time={leg.arrive} rail={colors.textMuted} dashed>
-              <View accessible accessibilityLabel={`Idź ${leg.meters} metrów, ${leg.minutes} ${minutesPl(leg.minutes)}. ${leg.instruction_pl}`}>
-                <View style={styles.between}>
-                  <T variant="title" size={17}>🚶 Idź {leg.meters} m</T>
-                  <T variant="muted">{leg.minutes} min</T>
-                </View>
-                <T variant="muted">{leg.instruction_pl}</T>
-              </View>
-            </TimelineRow>
+            <Card
+              key={i}
+              style={styles.step}
+              accessible
+              accessibilityLabel={`${step}. Idź ${leg.meters} metrów, ${leg.minutes} ${minutesPl(leg.minutes)}. ${leg.instruction_pl}. Na miejscu o ${leg.arrive}.`}
+            >
+              <T variant="muted">{step}</T>
+              <T variant="title" size={22}>🚶 Idź {leg.meters} m</T>
+              <T>{leg.instruction_pl}</T>
+              <Fact label="Czas" value={`${leg.minutes} min`} />
+              <Fact label="Na miejscu" value={leg.arrive} />
+            </Card>
           );
         }
-        const rail = rideIdx++ === 0 ? colors.depart : colors.arrive;
         const v = leg.vehicle;
+        const off = plus(leg.departure, leg.ride_min);
         return (
-          <TimelineRow key={i} time={leg.departure} rail={rail}>
-            <View style={{ gap: space(2) }}>
-              <View
-                accessible
-                accessibilityLabel={`${leg.from}. ${modeName(leg.mode)} ${leg.line_number} w kierunku ${leg.headsign}, odjazd ${leg.departure}, jazda ${leg.ride_min} ${minutesPl(leg.ride_min)}, do przystanku ${leg.to}.`}
-                style={{ gap: space(1) }}
-              >
-                <T variant="title">{leg.from}</T>
-                <View style={styles.rowWrap}>
-                  <LineBadge mode={leg.mode} number={leg.line_number} lowFloor={v.low_floor} />
-                  <T variant="muted">→ {leg.headsign}</T>
+          <Card key={i} style={styles.step}>
+            <View
+              accessible
+              accessibilityLabel={`${step}. Wsiądź na przystanku ${leg.from} do: ${modeName(leg.mode)} ${leg.line_number} w kierunku ${leg.headsign}. Odjazd ${leg.departure}.`}
+              style={{ gap: space(2) }}
+            >
+              <T variant="muted">{step}</T>
+              <View style={styles.rideHead}>
+                <LineBox mode={leg.mode} number={leg.line_number} />
+                <View style={{ flex: 1 }}>
+                  <T variant="title" size={20}>Wsiądź: {modeName(leg.mode)} {leg.line_number}</T>
+                  <T variant="muted">w kierunku {leg.headsign}</T>
                 </View>
-                <T variant="muted">{leg.ride_min} min jazdy, do: {leg.to}</T>
               </View>
-              <View
-                style={styles.vehicle}
-                accessible
-                accessibilityLabel={`Pojazd ${v.side_number.split("").join(" ")}, ${v.model}, ${lowFloorLabel(v.low_floor)}. ${v.boarding_hint_pl}`}
-              >
-                <T variant="number" size={30}>{v.side_number}</T>
-                <T variant="muted">{v.model}</T>
-                <T color={v.low_floor === "none" ? colors.delay : colors.live}>
-                  {v.low_floor === "none" ? "⚠ " : "♿ "}
-                  {lowFloorLabel(v.low_floor)}
-                </T>
-                <T>{v.boarding_hint_pl}</T>
-              </View>
-              <View style={styles.rowWrap}>
-                <TimeChip time={plus(leg.departure, leg.ride_min)} kind="arrive" />
-                <T variant="title" size={16}>{leg.to}</T>
-              </View>
+              <Fact label="Przystanek" value={leg.from} />
+              <Fact label="Odjazd" value={leg.departure} />
             </View>
-          </TimelineRow>
+            <View
+              style={styles.vehicle}
+              accessible
+              accessibilityLabel={`Pojazd ${v.side_number.split("").join(" ")}, ${v.model}, ${lowFloorLabel(v.low_floor)}. ${v.boarding_hint_pl}`}
+            >
+              <T variant="muted" size={13}>Pojazd</T>
+              <T variant="number" size={30}>{v.side_number}</T>
+              <T variant="muted">{v.model}</T>
+              <LowFloorNote lowFloor={v.low_floor} size={16} />
+              <T>{v.boarding_hint_pl}</T>
+            </View>
+            <View
+              accessible
+              accessibilityLabel={`Wysiądź na przystanku ${leg.to} o ${off}, po ${leg.ride_min} ${minutesPl(leg.ride_min, "acc")} jazdy.`}
+              style={{ gap: space(2) }}
+            >
+              <Fact label="Wysiądź" value={leg.to} />
+              <Fact label="O godzinie" value={`${off} (${leg.ride_min} min jazdy)`} />
+            </View>
+          </Card>
         );
       })}
-      <TimelineRow time={it.arrival} rail="transparent">
-        <T variant="title" accessibilityLabel={`Cel, przyjazd ${it.arrival}`}>📍 Cel</T>
-      </TimelineRow>
+      <Card style={[styles.step, styles.goal]} accessible accessibilityLabel={`Cel: ${destination}, przyjazd ${it.arrival}`}>
+        <T variant="muted">Cel</T>
+        <T variant="title" size={22}>📍 {destination}</T>
+        <Fact label="Przyjazd" value={it.arrival} />
+      </Card>
     </View>
   );
 }
 
-function TimelineRow({ time, rail, dashed, children }: { time: string; rail: string; dashed?: boolean; children: React.ReactNode }) {
+/** "Label ........ value" row; wraps under large font scaling. */
+function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.tlRow}>
-      <T variant="title" size={15} style={styles.tlTime} importantForAccessibility="no">{time}</T>
-      <View style={[styles.rail, { borderColor: rail, borderStyle: dashed ? "dashed" : "solid" }]} />
-      <View style={{ flex: 1, paddingBottom: space(4) }}>{children}</View>
+    <View style={styles.fact}>
+      <T variant="muted">{label}</T>
+      <T variant="title" size={17} style={{ flexShrink: 1, textAlign: "right" }}>{value}</T>
     </View>
   );
 }
@@ -167,22 +199,23 @@ export function departureLabel(d: Departure): string {
 
 export function DepartureRow({ d }: { d: Departure }) {
   const delayed = d.delay_min > 0;
+  const live = isLive(d.data_source);
   return (
     <View style={styles.depRow} accessible accessibilityLabel={departureLabel(d)}>
-      <LineBadge mode={d.mode} number={d.line_number} lowFloor={d.vehicle.low_floor} />
-      <View style={{ flex: 1 }}>
-        <T numberOfLines={1}>{d.headsign}</T>
-        {delayed ? <T size={14} color={colors.delay}>opóźniony o {d.delay_min} min</T> : null}
-      </View>
-      <LiveIndicator dataSource={d.data_source} delayed={delayed} />
-      <View style={{ alignItems: "flex-end" }}>
-        <T variant="title" size={17}>{d.eta_min <= 0 ? "teraz" : `za ${d.eta_min} min`}</T>
-        <View style={{ flexDirection: "row", gap: space(1) }}>
-          {delayed ? <TimeChip time={minusMinutes(d.departure_time, d.delay_min)} kind="planned" /> : null}
-          <T size={15} color={delayed ? colors.delay : isLive(d.data_source) ? colors.live : colors.textMuted}>
-            {d.departure_time}
+      <LineBox mode={d.mode} number={d.line_number} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <T variant="title" size={17} numberOfLines={2}>→ {d.headsign}</T>
+        <LowFloorNote lowFloor={d.vehicle.low_floor} />
+        {delayed ? (
+          <T size={14} color={colors.delay}>
+            Opóźniony o {d.delay_min} min (planowo {minusMinutes(d.departure_time, d.delay_min)})
           </T>
-        </View>
+        ) : null}
+      </View>
+      <View style={{ alignItems: "flex-end", gap: 2 }}>
+        <T variant="number" size={24} style={{ lineHeight: 28 }}>{d.eta_min <= 0 ? "teraz" : `${d.eta_min} min`}</T>
+        <T size={15} color={delayed ? colors.delay : live ? colors.live : colors.textMuted}>{d.departure_time}</T>
+        <LiveIndicator dataSource={d.data_source} delayed={delayed} />
       </View>
     </View>
   );
@@ -221,12 +254,12 @@ export function TripView({ trip, target }: { trip: TripStatus; target?: string |
 }
 
 const styles = StyleSheet.create({
-  routeCard: { flexDirection: "row", gap: space(4), alignItems: "center" },
-  rowWrap: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space(2) },
-  between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space(2) },
-  tlRow: { flexDirection: "row", gap: space(3) },
-  tlTime: { width: 52, textAlign: "right" },
-  rail: { width: 0, borderLeftWidth: 5, borderRadius: 3 },
+  between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space(2), flexWrap: "wrap" },
+  legs: { gap: space(2), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.surfaceAlt, paddingTop: space(3) },
+  step: { gap: space(2) },
+  goal: { borderWidth: 2, borderColor: colors.arrive },
+  rideHead: { flexDirection: "row", alignItems: "center", gap: space(3) },
+  fact: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: space(3), flexWrap: "wrap" },
   vehicle: { backgroundColor: colors.surfaceAlt, borderRadius: radius.chip, padding: space(3), gap: space(1) },
   depRow: {
     flexDirection: "row",

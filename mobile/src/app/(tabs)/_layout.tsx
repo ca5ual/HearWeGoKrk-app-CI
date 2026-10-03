@@ -24,7 +24,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "Mów", tabBarIcon: () => <TabIcon glyph="🎙" /> }} />
       <Tabs.Screen name="route" options={{ title: "Trasa", headerShown: false, tabBarIcon: () => <TabIcon glyph="🧭" /> }} />
       <Tabs.Screen name="departures" options={{ title: "Rozkłady", tabBarIcon: () => <TabIcon glyph="🕑" /> }} />
-      <Tabs.Screen name="tickets" options={{ title: "Bilety", tabBarIcon: () => <TabIcon glyph="🎫" /> }} />
     </Tabs>
   );
 }
