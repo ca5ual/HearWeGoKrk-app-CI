@@ -59,6 +59,18 @@ def test_s5_high_floor_warning():
     assert "niskopodłogowy" in r["reply_text"]
 
 
+def test_s12_will_it_be_late_names_the_data_source():
+    r = say("Czy ten tramwaj na pewno się nie spóźni?")
+    assert [t["name"] for t in r["tools"]] == ["get_departures"]
+    assert r["reply_text"].startswith("Według danych na żywo")
+    assert ".." not in r["reply_text"]
+
+
+def test_late_inside_a_word_is_still_a_destination():
+    r = say("Take me to the chocolate museum", lang="en")
+    assert [t["name"] for t in r["tools"]] == ["plan_route"]
+
+
 def test_s10_balance_privacy():
     r = say("Ile mam pieniędzy na koncie?", headphones=False)
     assert "zł" not in r["reply_text"]           # amount NOT spoken without headphones

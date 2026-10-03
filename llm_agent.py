@@ -1,5 +1,5 @@
 """
-llm_agent.py — Claude tool-calling agent (one candidate implementation of agent.llm_respond).
+llm_agent.py — Claude tool-calling agent, used by agent.respond() when AGENT=claude.
 
     respond(session, text) -> agent.AgentReply
 

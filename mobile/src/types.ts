@@ -114,9 +114,7 @@ export type Wallet = {
 // `ui` messages from /ws/voice (FRONTEND.md section 6).
 export type UiPayload =
   | { component: "route_results"; data: RouteResult }
-  | { component: "route_detail"; data: Itinerary }
   | { component: "departures"; data: DeparturesResult }
-  | { component: "ticket_shop"; data: { tickets: Ticket[] } }
   | { component: "ticket_confirm"; data: PreparedTicket }
   | { component: "trip_live"; data: TripStatus };
 

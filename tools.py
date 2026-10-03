@@ -1,9 +1,9 @@
 """
 tools.py — everything the agent can DO, in one registry.
 
-Person A's LLM loop only needs two things from this file:
-    tool_schemas_anthropic() / tool_schemas_openai()   -> pass to the LLM API
-    execute(session, name, args)                       -> run a tool call, get a ToolOutcome
+An agent only needs two things from this file:
+    tool_schemas_anthropic()        -> pass to the LLM API
+    execute(session, name, args)    -> run a tool call, get a ToolOutcome
 
 To switch from mock to live data later, change `provider` below to a module that
 exposes the same functions as mock_realtime (get_departures, plan_route, ...).
@@ -168,8 +168,7 @@ TOOLS: dict[str, Tool] = {
     "list_tickets": Tool(
         list_tickets,
         "Ticket catalog with prices. fare: 'reduced' or 'full'.",
-        _obj({"fare": {"type": "string", "enum": ["reduced", "full"]}}),
-        ui_component="ticket_shop"),
+        _obj({"fare": {"type": "string", "enum": ["reduced", "full"]}})),
     "get_balance": Tool(
         get_balance,
         "Wallet balance and active tickets. If speak_amount_aloud is false, do NOT say the amount; "
@@ -194,11 +193,6 @@ TOOLS: dict[str, Tool] = {
 
 def tool_schemas_anthropic() -> list[dict]:
     return [{"name": n, "description": t.description, "input_schema": t.parameters} for n, t in TOOLS.items()]
-
-
-def tool_schemas_openai() -> list[dict]:
-    return [{"type": "function", "function": {"name": n, "description": t.description,
-                                              "parameters": t.parameters}} for n, t in TOOLS.items()]
 
 
 _NO_UI_STATUSES = {"ambiguous", "not_found", "no_route"}

@@ -6,8 +6,8 @@ and compare which tools they call, the safety rules, the replies and the latency
     .venv/bin/python scripts/compare_agents.py rules claude         # needs ANTHROPIC_API_KEY, costs money
     .venv/bin/python scripts/compare_agents.py rules mymodule:respond   # any `async def respond(session, text)`
 
-An agent is "rules", "claude", or "module:function" returning agent.AgentReply. Person A's agent
-plugs in the same way. Results are also written to scripts/compare_results.json.
+An agent is "rules", "claude", or "module:function" returning agent.AgentReply.
+Results are also written to scripts/compare_results.json.
 
 Scenario setup (GPS, headphones, a pending purchase) is done through the backend itself, so every
 agent starts each scenario from the same state. S8 (silence) and S11 (trip announcements) are

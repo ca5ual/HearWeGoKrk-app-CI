@@ -27,22 +27,27 @@ React Native (Expo)  ──audio + GPS──▶  FastAPI  ──▶  Parakeet V3
 - **ElevenLabs** streams the spoken reply in Polish or English.
 - Every agent reply is sent as **audio + text** (text shown on screen for a sighted companion, and available for "powtórz / repeat").
 
-## 2. Repo layout (suggested)
+## 2. Repo layout
 
 ```
-backend/
-  app.py              FastAPI app, routers
-  voice_ws.py         WebSocket: audio in → STT → agent → TTS → audio out
-  agent.py            LLM loop, system prompt, tool registry, conversation state
-  tools.py            thin wrappers around mock_realtime + wallet
-  mock/               ← this folder (JSON files + mock_realtime.py)
-mobile/
-  App.tsx             big button screen
-  audio.ts            record / play / stream
-  location.ts         GPS (+ demo GPS override)
+app.py                FastAPI app: REST endpoints, demo controls
+voice_ws.py           WebSocket: audio in → STT → agent → TTS → audio out, confirmation + trip timers
+agent.py              agent entry point + rule-based fallback brain
+llm_agent.py          Claude tool-calling agent (AGENT=claude)
+tools.py              tool registry: thin wrappers around mock_realtime + wallet
+wallet.py             mock wallet + purchase state machine
+session.py            per-conversation state
+speech.py             ElevenLabs speech-to-text and text-to-speech
+mock/                 JSON files + mock_realtime.py (section 3)
+scripts/              TTSS snapshot, agent comparison on the golden set
+tests/
+mobile/src/
+  app/                screens (expo-router): Mów, Trasa, Rozkłady, trip, settings, help
+  agent/              AgentContext (WebSocket + state), audio.ts, location.ts
+  components/         route cards, departures, confirmation sheet, talk button
 ```
 
-## 3. Mock data (this folder)
+## 3. Mock data (`mock/`)
 
 | File | Contents |
 |---|---|

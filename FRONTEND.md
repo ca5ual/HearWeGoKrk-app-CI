@@ -144,9 +144,7 @@ Add this message type to `/ws/voice` (backend sends it right after the tool resu
 | `component` | Screen | `data` comes from |
 |---|---|---|
 | `route_results` | 5.3 | `plan_route` (`best` + `alternatives`) |
-| `route_detail` | 5.4 | one itinerary from `plan_route` |
 | `departures` | 5.5 | `get_departures` |
-| `ticket_shop` | 5.6 | ticket catalog |
 | `ticket_confirm` | 5.7 | `prepare_ticket` |
 | `trip_live` | 5.8 | `vehicle_status` |
 

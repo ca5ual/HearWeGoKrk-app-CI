@@ -96,9 +96,9 @@ def ticket_catalog():
 
 
 @app.get("/tools/schemas")
-def schemas(fmt: str = "anthropic"):
-    """For Person A: the tool definitions to pass to the LLM."""
-    return tools.tool_schemas_openai() if fmt == "openai" else tools.tool_schemas_anthropic()
+def schemas():
+    """The tool definitions passed to the LLM."""
+    return tools.tool_schemas_anthropic()
 
 
 # --- text agent over REST (testing without the phone) ----------------------
