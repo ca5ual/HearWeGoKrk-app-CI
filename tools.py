@@ -75,6 +75,19 @@ def match_boarded_vehicle(session, lat: float | None = None, lon: float | None =
     return {"matched": True, **match, "trip": provider.vehicle_status(side)}
 
 
+def set_vehicle(session, side_number: str) -> dict:
+    """The user said or read the side number (it is printed inside every vehicle)."""
+    veh = provider.find_vehicle(side_number)
+    if veh is None:
+        return {"error": "unknown_vehicle",
+                "message": f"No vehicle '{side_number}'. Ask the user to read the side number again, "
+                           "e.g. 'HG 935' (two letters, three digits, on a sticker by the door)."}
+    session.current_vehicle = veh["side_number"]  # used by prepare_ticket
+    st = provider.vehicle_status(veh["side_number"])
+    return {"matched": True, "vehicle": provider._vehicle_info(veh),
+            "line_number": st["line_number"] if st else None, "trip": st}
+
+
 def vehicle_status(session, side_number: str | None = None) -> dict:
     side_number = side_number or session.current_vehicle
     if not side_number:
@@ -130,7 +143,7 @@ TOOLS: dict[str, Tool] = {
         "eta_min, delay_min, data_source and vehicle.low_floor ('full'|'partial'|'none'). "
         "If the first vehicle has low_floor 'none', warn the user and mention the next low-floor one.",
         _obj({"stop_id": {"type": "string"},
-              "line_id": {"type": "string", "description": "e.g. 'T14', 'T1', 'B152'"},
+              "line_id": {"type": "string", "description": "e.g. 'T1', 'T12', 'T14', 'B124'"},
               "low_floor_only": {"type": "boolean"},
               "limit": {"type": "integer"}}),
         ui_component="departures"),
@@ -139,6 +152,13 @@ TOOLS: dict[str, Tool] = {
         "Detect which vehicle the user is in from GPS. Call when the user says they boarded, or before "
         "buying a ticket. Stores the side number for prepare_ticket.",
         _obj({"line_id": {"type": "string"}}),
+        ui_component="trip_live", ui_key="trip"),
+    "set_vehicle": Tool(
+        set_vehicle,
+        "Set the user's vehicle from its side number (numer boczny), when the user says or reads it, "
+        "e.g. 'jestem w HG 935', or when match_boarded_vehicle found nothing. Pass what the user said; "
+        "'HG 935', 'hg935' or just '935' all work. Stores the side number for prepare_ticket.",
+        _obj({"side_number": {"type": "string"}}, ["side_number"]),
         ui_component="trip_live", ui_key="trip"),
     "vehicle_status": Tool(
         vehicle_status,

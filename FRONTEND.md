@@ -129,7 +129,7 @@ Icons: plain outline icons from Lucide (`@react-native-vector-icons/lucide`) via
 - Two full-width buttons: **Potwierdź** (ticket yellow) and **Anuluj** (outlined). A visible countdown matching `timeout_s`; when it ends, the modal closes with "Nie kupiono biletu".
 
 ### 5.8 Trip in progress — HearWeGoKrk addition
-- Huge text: line + side number ("14 · RZ612"), the next stop, and "Wysiadasz za 2 przystanki".
+- Huge text: line + side number ("12 · HG935"), the next stop, and "Wysiadasz za 2 przystanki".
 - A list of the remaining stops with ETAs (from `vehicle_status`).
 - A haptic pattern + announcement one stop before the destination.
 

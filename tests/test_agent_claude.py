@@ -109,7 +109,7 @@ def test_route_turn_and_request_shape():
 
 def _board_rz612():
     rt.reset_clock(12)
-    assert client.post("/demo/gps", json={"side_number": "RZ612"}).status_code == 200
+    assert client.post("/demo/gps", json={"side_number": "HG935"}).status_code == 200
 
 
 def test_buy_ticket_over_two_turns():
@@ -127,7 +127,7 @@ def test_buy_ticket_over_two_turns():
     s = Session(headphones=True)
 
     r1 = run(s, "Kup bilet")
-    assert s.pending is not None and s.current_vehicle == "RZ612"
+    assert s.pending is not None and s.current_vehicle == "HG935"
     assert [b["tool_use_id"] for b in tool_results(fake.requests[1])] == ["a", "b"]
     assert wallet.get_balance(Session())["balance_pln"] == before  # nothing paid yet
     assert any(o.pending for o in r1.outcomes)
@@ -148,7 +148,7 @@ def test_confirm_in_same_turn_is_refused():
     )
     llm_agent._client = fake
     s = Session(headphones=True)
-    s.current_vehicle = "RZ612"
+    s.current_vehicle = "HG935"
     run(s, "kup bilet")
     res = tool_results(fake.requests[2])[0]
     assert res["is_error"] and json.loads(res["content"])["error"] == "same_turn"
@@ -164,7 +164,7 @@ def test_api_down_before_tools_falls_back_to_rules():
 def test_api_down_after_purchase_does_not_redo_turn():
     _board_rz612()
     s = Session(headphones=True)
-    s.current_vehicle = "RZ612"
+    s.current_vehicle = "HG935"
     s.new_turn()
     wallet.prepare_ticket(s, "kmk_15min_n")
     llm_agent._client = FakeClaude(resp(call("confirm_pending_action", "c")), api_down())

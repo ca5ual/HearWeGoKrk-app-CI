@@ -15,6 +15,7 @@ export const RECORDING_OPTIONS: RecordingOptions = {
   extension: Platform.OS === "ios" ? ".wav" : ".m4a",
   sampleRate: 16000,
   numberOfChannels: 1,
+  isMeteringEnabled: true, // hands-free answers: stop recording when the user goes quiet
   bitRate: 256000,
   android: { outputFormat: "mpeg4", audioEncoder: "aac" },
   ios: {
@@ -96,7 +97,7 @@ export function stopPlayback(): void {
 }
 
 /** Play the server's TTS (the audio_chunk messages of one reply, concatenated). */
-export function playReplyAudio(chunks: string[]): void {
+export function playReplyAudio(chunks: string[], onDone?: () => void): void {
   const parts = chunks.map(base64ToBytes);
   const all = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0;
@@ -111,23 +112,31 @@ export function playReplyAudio(chunks: string[]): void {
   file.create();
   file.write(all);
   lastReplyFile = file;
-  replayLast();
+  replayLast(undefined, "pl", onDone);
 }
 
 /** Fallback while the backend sends no TTS audio: speak with the phone's own voice. */
-export function speakText(text: string, lang: "pl" | "en"): void {
+export function speakText(text: string, lang: "pl" | "en", onDone?: () => void): void {
   stopPlayback();
-  Speech.speak(text, { language: lang === "pl" ? "pl-PL" : "en-US" });
+  Speech.speak(text, { language: lang === "pl" ? "pl-PL" : "en-US", onDone });
 }
 
 /** "Powtórz": replay the last audio reply, or re-speak the text if there was no audio. */
-export function replayLast(fallbackText?: string, lang: "pl" | "en" = "pl"): void {
+export function replayLast(fallbackText?: string, lang: "pl" | "en" = "pl", onDone?: () => void): void {
   if (lastReplyFile?.exists) {
     stopPlayback();
-    player = createAudioPlayer(lastReplyFile.uri);
-    player.play();
+    const p = createAudioPlayer(lastReplyFile.uri);
+    player = p;
+    if (onDone) {
+      const sub = p.addListener("playbackStatusUpdate", (s) => {
+        if (!s.didJustFinish) return;
+        sub.remove();
+        if (player === p) onDone(); // not when it was interrupted by a newer reply
+      });
+    }
+    p.play();
   } else if (fallbackText) {
-    speakText(fallbackText, lang);
+    speakText(fallbackText, lang, onDone);
   }
 }
 

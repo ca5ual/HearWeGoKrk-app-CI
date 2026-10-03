@@ -46,8 +46,9 @@ mobile/
 
 | File | Contents |
 |---|---|
-| `stops.json` | Real Kraków stop names, approx. coordinates, step-free / tactile / voice-board flags |
-| `lines_and_vehicles.json` | Tram 1, tram 14, bus 152; vehicles with side number, model, `low_floor` (full/partial/none) |
+| `ttss_snapshot.json` | Raw extract from Kraków TTSS (api.ttss.pl, the backend of beta.ttss.pl): vehicles and real trips |
+| `stops.json` | Real stop names, order and platform coordinates from TTSS; step-free / tactile / voice-board flags (hand-made, `null` = unknown) |
+| `lines_and_vehicles.json` | Trams 1, 12, 14 and bus 124 from TAURON Arena with real stop order and travel times; real vehicles with side number (*numer boczny*, e.g. `HG935`), model, `low_floor` (full/partial/none), air-con |
 | `routes.json` | Route templates from the venue, destination aliases, ambiguous aliases ("rondo") |
 | `account_and_tickets.json` | Demo persona, wallet, mock card, ticket catalog, confirmation templates |
 | `demo_scenarios.json` | 12-case golden set: typical / hard / high-risk |
@@ -55,10 +56,16 @@ mobile/
 
 Smoke test: `python mock_realtime.py`
 
-**Before the demo, call `reset_clock()`**: the first tram 14 is then the high-floor HY854 running 3 min late,
-and the next one (RZ612) is low-floor. That is scenario S5.
+Refresh from live TTSS (run while trams are running): `.venv/bin/python scripts/ttss_snapshot.py`.
+It rewrites `ttss_snapshot.json`, `stops.json` and `lines_and_vehicles.json`; headways, delays,
+boarding hints and the demo vehicle order are set at the top of the script.
 
-⚠️ Ticket prices are placeholders (check ztp.krakow.pl). Side numbers are illustrative.
+**Before the demo, call `reset_clock()`**: the first tram 14 is then the high-floor RZ105 running 3 min late,
+and the next one (HY712) is low-floor. That is scenario S5. RZ105 is the only vehicle not from TTSS
+(`"source": "illustrative"`): Kraków's live fleet no longer has fully high-floor trams.
+With `reset_clock(12)` tram 12 **HG935** is on the road: that's the vehicle the ticket demo boards.
+
+⚠️ Ticket prices are placeholders (check ztp.krakow.pl).
 
 ## 4. Contracts (agree on these FIRST, then work in parallel)
 
@@ -69,6 +76,7 @@ and the next one (RZ612) is low-floor. That is scenario S5.
 | `plan_route` | `destination: str, prefer_low_floor: bool=true` | `status` ok / ambiguous / not_found / no_route, `best`, `alternatives`, `data_source` |
 | `get_departures` | `stop_id: str, line_id?: str, low_floor_only?: bool` | list of departures with `eta_min`, `delay_min`, `vehicle` |
 | `match_boarded_vehicle` | `lat, lon, line_id?` | matched vehicle or null |
+| `set_vehicle` | `side_number` (as spoken: "HG 935", "935") | vehicle + trip; sets the side number for the ticket |
 | `vehicle_status` | `side_number` | position, remaining stops with ETA |
 | `get_balance` | – | `balance_pln`, default card label |
 | `prepare_ticket` | `ticket_id, side_number` | `pending_action_id` + confirmation text (no money moves) |
@@ -86,9 +94,14 @@ Client → server:
 {"type": "context", "lat": 50.06, "lon": 19.98, "headphones": true, "lang": "pl"}
 {"type": "stop"}
 {"type": "extend_pending", "id": "<pending_action_id>"}
+{"type": "listening", "id": "<pending_action_id>"}
 ```
 `extend_pending` ("Potrzebuję więcej czasu", WCAG 2.2.1) restarts the confirmation window of the pending
 purchase. It never confirms anything.
+`listening`: the phone finished reading the purchase question and opened the mic by itself (hands-free
+"tak"/"nie"). The silence timer restarts from that moment but keeps its retry count, so silence still
+ends in one retry and then a cancel. When a turn prepares a purchase, the server speaks only the
+`confirmation_text` (not the LLM's full answer) and the silence window starts after it has been read out.
 Server → client:
 ```json
 {"type": "state", "value": "listening | thinking | speaking | idle"}
@@ -161,6 +174,7 @@ Server → client:
 1. `POST /demo/reset`. Phone is mirrored and the screen reader is on.
 2. "Jak dojadę na Rynek?" → route, ETA, low-floor.
 3. "Kiedy następna czternastka?" → high-floor warning, then an offer to wait.
-4. Fake GPS onto RZ612 → "Jesteś w tramwaju 14, pojazd RZ612. Kupić bilet?"
+4. Ustawienia → Tryb demo → "Wsiadam do HG935" (fake GPS) → "Jesteś w linii 12, pojazd HG935. Kupić bilet?"
+   Without GPS the user can also say the side number: "Jestem w HG 935".
 5. "Tak" → confirmation with parameters → "Tak" → ticket.
 6. Fallback: play the backup video.

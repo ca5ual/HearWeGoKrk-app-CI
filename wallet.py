@@ -111,7 +111,10 @@ def prepare_ticket(session, ticket_id: str, side_number: str | None = None) -> d
         raise WalletError("missing_side_number",
                           "Vehicle unknown. Call match_boarded_vehicle first, or ask the user to say when they board.")
     if side_number and side_number not in rt.VEHICLES:
-        raise WalletError("unknown_vehicle", f"Vehicle '{side_number}' not found.")
+        veh = rt.find_vehicle(side_number)  # "HG 935", "935"...
+        if veh is None:
+            raise WalletError("unknown_vehicle", f"Vehicle '{side_number}' not found.")
+        side_number = veh["side_number"]
 
     price = ticket["price_pln"]
     # Pay from the in-app balance when possible, otherwise from the default card.

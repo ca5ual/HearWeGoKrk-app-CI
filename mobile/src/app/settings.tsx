@@ -8,7 +8,7 @@ import { Button, Card, IconText, T, inputOutline, switchColors } from "@/compone
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 
 export default function Settings() {
-  const { backendUrl, setBackendUrl, connection, headphones, setHeadphones, lang, setLang, refreshWallet } = useAgent();
+  const { backendUrl, setBackendUrl, connection, headphones, setHeadphones, useGps, setUseGps, lang, setLang, refreshWallet } = useAgent();
   const [url, setUrl] = useState(backendUrl);
   const [demo, setDemo] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
@@ -28,6 +28,9 @@ export default function Settings() {
       <Card style={styles.card}>
         <Row label="Mam słuchawki" hint="Bez słuchawek kwoty nie są czytane na głos">
           <Switch {...switchColors} value={headphones} onValueChange={setHeadphones} accessibilityLabel="Mam słuchawki" />
+        </Row>
+        <Row label="GPS telefonu" hint={useGps ? "Używam Twojej lokalizacji" : "Wyłączony: start przy Tauron Arenie"}>
+          <Switch {...switchColors} value={useGps} onValueChange={setUseGps} accessibilityLabel="GPS telefonu" />
         </Row>
         <Row label="English">
           <Switch {...switchColors} value={lang === "en"} onValueChange={(v) => setLang(v ? "en" : "pl")} accessibilityLabel="Odpowiedzi po angielsku" />
@@ -61,10 +64,10 @@ export default function Settings() {
             <Button kind="plain" label="Reset demo (start)" onPress={run("reset", () => api.demoReset(backendUrl, 0))} />
             <Button
               kind="plain"
-              label="Wsiadam do RZ612 (+12 min)"
-              onPress={run("RZ612", async () => {
+              label="Wsiadam do HG935 (+12 min)"
+              onPress={run("HG935", async () => {
                 await api.demoReset(backendUrl, 12);
-                await api.demoGps(backendUrl, "RZ612");
+                await api.demoGps(backendUrl, "HG935");
               })}
             />
             <Button kind="plain" label="Wyczyść sztuczny GPS" onPress={run("GPS", () => api.demoGpsClear(backendUrl))} />

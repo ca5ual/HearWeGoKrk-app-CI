@@ -51,11 +51,13 @@ _NO = re.compile(r"\b(nie|no)\b", re.I)
 _BALANCE = re.compile(r"(saldo|ile mam|pieni[eę]dz|balance|how much money)", re.I)
 _BOARD = re.compile(r"(wsiad[łl]|jestem w|i'?m on|boarded|got on)", re.I)
 _BUY = re.compile(r"(kup|bilet|ticket|buy)", re.I)
+_SIDE = re.compile(r"(numer boczny|numer pojazdu|pojazd|side number|vehicle)", re.I)
 _DEPART = re.compile(r"(kiedy|nast[eę]pn|odjazd|next|when)", re.I)
 _REPEAT = re.compile(r"(powt[oó]rz|repeat|say again)", re.I)
 
 # Spoken line names -> line ids. Order matters: longer phrases first.
-_LINE_WORDS = [("czternast", "T14"), ("jedynk", "T1"), ("152", "B152"), ("14", "T14"), (r"\b1\b", "T1")]
+_LINE_WORDS = [("czternast", "T14"), ("dwunast", "T12"), ("jedynk", "T1"), (r"\b124\b", "B124"),
+               (r"\b14\b", "T14"), (r"\b12\b", "T12"), (r"\b1\b", "T1")]
 
 _MODE_PL = {"tram": "tramwaj", "bus": "autobus"}
 _MODE_EN = {"tram": "tram", "bus": "bus"}
@@ -181,12 +183,25 @@ def rule_respond(session, text: str) -> AgentReply:
             msg = session.t("Jesteś bez słuchawek. Podać saldo na głos?", "You're not wearing headphones. Say the balance aloud?")
         return _remember(session, AgentReply(msg, out))
 
-    if _BOARD.search(t) or (_BUY.search(t) and not session.current_vehicle):
+    # The user said the side number ("jestem w HG 935", "numer boczny 935"): no GPS needed.
+    if (_BOARD.search(t) or _BUY.search(t) or _SIDE.search(t)) and tools.provider.find_vehicle(t):
+        r = run("set_vehicle", side_number=t)
+        v = r["vehicle"]
+        if not _BUY.search(t):
+            session.flags["offer"] = "buy"
+            return _remember(session, AgentReply(session.t(
+                f"Jesteś w pojeździe {v['side_number']}"
+                + (f", linia {r['line_number']}" if r["line_number"] else "") + ". Kupić bilet 15-minutowy?",
+                f"You're in vehicle {v['side_number']}"
+                + (f", line {r['line_number']}" if r["line_number"] else "") + ". Buy a 15-minute ticket?"), out))
+    elif _BOARD.search(t) or (_BUY.search(t) and not session.current_vehicle):
         r = run("match_boarded_vehicle")
         if not r.get("matched"):
             return _remember(session, AgentReply(session.t(
-                "Nie widzę jeszcze, w którym pojeździe jesteś. Powiedz, gdy wsiądziesz.",
-                "I can't tell which vehicle you're in yet. Tell me when you board."), out))
+                "Nie widzę jeszcze, w którym pojeździe jesteś. Powiedz numer boczny z naklejki przy drzwiach, "
+                "na przykład HG 935.",
+                "I can't tell which vehicle you're in yet. Say the side number from the sticker by the door, "
+                "for example HG 935."), out))
         v = r["vehicle"]
         if not _BUY.search(t):
             session.flags["offer"] = "buy"

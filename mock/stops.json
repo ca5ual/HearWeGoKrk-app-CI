@@ -1,25 +1,730 @@
 {
-  "_meta": {
-    "note": "MOCK DATA for HearWeGoKrk demo. Stop names are real Kraków stops, coordinates are approximate. Not an official ZTP/MPK dataset.",
-    "demo_origin": "tauron_arena"
+ "_meta": {
+  "note": "Stop names, order and platform coordinates from Kraków TTSS (api.ttss.pl, used by beta.ttss.pl). step_free_access / tactile_paving / voice_departure_board are not in TTSS: hand-made, null = unknown.",
+  "snapshot": "2026-10-03T21:26:24+02:00",
+  "generated_by": "scripts/ttss_snapshot.py",
+  "demo_origin": "tauron_arena"
+ },
+ "stops": [
+  {
+   "id": "tauron_arena",
+   "name": "TAURON Arena Kraków Al. Pokoju",
+   "ttss_stop_point": "287129",
+   "lat": 50.064416,
+   "lon": 19.990077,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
   },
-  "stops": [
-    { "id": "tauron_arena", "name": "Tauron Arena Kraków Al. Pokoju", "lat": 50.0657, "lon": 19.9895, "modes": ["tram", "bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "rondo_grzegorzeckie", "name": "Rondo Grzegórzeckie", "lat": 50.0585, "lon": 19.9600, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": false },
-    { "id": "hala_targowa", "name": "Hala Targowa", "lat": 50.0590, "lon": 19.9480, "modes": ["tram"], "step_free_access": true, "tactile_paving": false, "voice_departure_board": false },
-    { "id": "starowislna", "name": "Starowiślna", "lat": 50.0573, "lon": 19.9442, "modes": ["tram"], "step_free_access": false, "tactile_paving": false, "voice_departure_board": false },
-    { "id": "poczta_glowna", "name": "Poczta Główna", "lat": 50.0607, "lon": 19.9408, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "plac_wszystkich_swietych", "name": "Plac Wszystkich Świętych", "lat": 50.0592, "lon": 19.9383, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "rondo_mogilskie", "name": "Rondo Mogilskie", "lat": 50.0662, "lon": 19.9620, "modes": ["tram", "bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "dworzec_glowny", "name": "Dworzec Główny", "lat": 50.0668, "lon": 19.9455, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "dworzec_glowny_zachod", "name": "Dworzec Główny Zachód", "lat": 50.0675, "lon": 19.9440, "modes": ["bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "teatr_bagatela", "name": "Teatr Bagatela", "lat": 50.0640, "lon": 19.9323, "modes": ["tram"], "step_free_access": true, "tactile_paving": false, "voice_departure_board": false },
-    { "id": "agh_ur", "name": "AGH / UR", "lat": 50.0660, "lon": 19.9205, "modes": ["tram"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true },
-    { "id": "bronowice_male", "name": "Bronowice Małe", "lat": 50.0815, "lon": 19.8885, "modes": ["tram", "bus"], "step_free_access": true, "tactile_paving": true, "voice_departure_board": true }
-  ],
-  "places": [
-    { "id": "rynek_glowny", "name": "Rynek Główny", "lat": 50.0617, "lon": 19.9373 },
-    { "id": "agh_a0", "name": "AGH, budynek A-0", "lat": 50.0646, "lon": 19.9230 },
-    { "id": "dworzec_glowny_poi", "name": "Dworzec Główny PKP", "lat": 50.0677, "lon": 19.9475 }
-  ]
+  {
+   "id": "dabie",
+   "name": "Dąbie",
+   "ttss_stop_point": "037029",
+   "lat": 50.060709,
+   "lon": 19.979012,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "ofiar_dabia",
+   "name": "Ofiar Dąbia",
+   "ttss_stop_point": "036929",
+   "lat": 50.059629,
+   "lon": 19.976271,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "fabryczna",
+   "name": "Fabryczna",
+   "ttss_stop_point": "036829",
+   "lat": 50.060251,
+   "lon": 19.971272,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "nullo",
+   "name": "Nullo",
+   "ttss_stop_point": "11",
+   "lat": 50.060173,
+   "lon": 19.967382,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "teatr_variete",
+   "name": "Teatr Variete",
+   "ttss_stop_point": "285929",
+   "lat": 50.058827,
+   "lon": 19.962374,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "rondo_grzegorzeckie",
+   "name": "Rondo Grzegórzeckie",
+   "ttss_stop_point": "036539",
+   "lat": 50.058426,
+   "lon": 19.959244,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "rondo_mogilskie",
+   "name": "Rondo Mogilskie",
+   "ttss_stop_point": "012549",
+   "lat": 50.064973,
+   "lon": 19.959357,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
+  },
+  {
+   "id": "lubicz",
+   "name": "Lubicz",
+   "ttss_stop_point": "012619",
+   "lat": 50.065186,
+   "lon": 19.952104,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "teatr_slowackiego",
+   "name": "Teatr Słowackiego",
+   "ttss_stop_point": "324219",
+   "lat": 50.064609,
+   "lon": 19.945628,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "poczta_glowna",
+   "name": "Poczta Główna",
+   "ttss_stop_point": "035719",
+   "lat": 50.059797,
+   "lon": 19.942404,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
+  },
+  {
+   "id": "plac_wszystkich_swietych",
+   "name": "Plac Wszystkich Świętych",
+   "ttss_stop_point": "136019",
+   "lat": 50.05912,
+   "lon": 19.93824,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
+  },
+  {
+   "id": "filharmonia",
+   "name": "Filharmonia",
+   "ttss_stop_point": "032219",
+   "lat": 50.05903,
+   "lon": 19.93387,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "jubilat",
+   "name": "Jubilat",
+   "ttss_stop_point": "031919",
+   "lat": 50.055498,
+   "lon": 19.928109,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "komorowskiego",
+   "name": "Komorowskiego",
+   "ttss_stop_point": "031319",
+   "lat": 50.053451,
+   "lon": 19.921873,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "salwator",
+   "name": "Salwator",
+   "ttss_stop_point": "031139",
+   "lat": 50.05263,
+   "lon": 19.917407,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "tauron_wieczysta",
+   "name": "TAURON Arena Kraków Wieczysta",
+   "ttss_stop_point": "304029",
+   "lat": 50.071103,
+   "lon": 19.982871,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "bialucha",
+   "name": "Białucha",
+   "ttss_stop_point": "013029",
+   "lat": 50.067597,
+   "lon": 19.977192,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "cystersow",
+   "name": "Cystersów",
+   "ttss_stop_point": "012929",
+   "lat": 50.06654,
+   "lon": 19.969149,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "starowislna",
+   "name": "Starowiślna",
+   "ttss_stop_point": "035829",
+   "lat": 50.05689,
+   "lon": 19.945029,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": false,
+   "tactile_paving": false,
+   "voice_departure_board": false
+  },
+  {
+   "id": "stradom",
+   "name": "Stradom",
+   "ttss_stop_point": "035939",
+   "lat": 50.052258,
+   "lon": 19.942061,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "orzeszkowej",
+   "name": "Orzeszkowej",
+   "ttss_stop_point": "036119",
+   "lat": 50.050631,
+   "lon": 19.938671,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "rondo_grunwaldzkie",
+   "name": "Rondo Grunwaldzkie",
+   "ttss_stop_point": "333819",
+   "lat": 50.048567,
+   "lon": 19.930917,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "szwedzka",
+   "name": "Szwedzka",
+   "ttss_stop_point": "057519",
+   "lat": 50.046721,
+   "lon": 19.925299,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "kapelanka",
+   "name": "Kapelanka",
+   "ttss_stop_point": "057619",
+   "lat": 50.044913,
+   "lon": 19.922059,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "slomiana",
+   "name": "Słomiana",
+   "ttss_stop_point": "057719",
+   "lat": 50.041404,
+   "lon": 19.9241,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "kobierzynska",
+   "name": "Kobierzyńska",
+   "ttss_stop_point": "058419",
+   "lat": 50.03444,
+   "lon": 19.925931,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "lipinskiego",
+   "name": "Lipińskiego",
+   "ttss_stop_point": "268619",
+   "lat": 50.030792,
+   "lon": 19.924804,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "grota_roweckiego",
+   "name": "Grota-Roweckiego",
+   "ttss_stop_point": "268719",
+   "lat": 50.031867,
+   "lon": 19.920212,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "norymberska",
+   "name": "Norymberska",
+   "ttss_stop_point": "268819",
+   "lat": 50.029809,
+   "lon": 19.912225,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "ruczaj",
+   "name": "Ruczaj",
+   "ttss_stop_point": "058919",
+   "lat": 50.026932,
+   "lon": 19.905181,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "kampus_uj",
+   "name": "Kampus UJ",
+   "ttss_stop_point": "269019",
+   "lat": 50.024044,
+   "lon": 19.901485,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "kampus_up_jp_ii",
+   "name": "Kampus UP JP II",
+   "ttss_stop_point": "22",
+   "lat": 50.020377,
+   "lon": 19.897505,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "czerwone_maki_p_r",
+   "name": "Czerwone Maki P+R",
+   "ttss_stop_point": "303819",
+   "lat": 50.017986,
+   "lon": 19.889106,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "dworzec_glowny_tunel",
+   "name": "Dworzec Główny Tunel",
+   "ttss_stop_point": "117329",
+   "lat": 50.068258,
+   "lon": 19.947641,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "politechnika",
+   "name": "Politechnika",
+   "ttss_stop_point": "007339",
+   "lat": 50.071143,
+   "lon": 19.945072,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "dworzec_towarowy",
+   "name": "Dworzec Towarowy",
+   "ttss_stop_point": "007029",
+   "lat": 50.07592,
+   "lon": 19.94038,
+   "modes": [
+    "tram"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "ugorek",
+   "name": "Ugorek",
+   "ttss_stop_point": "007457",
+   "lat": 50.07706,
+   "lon": 19.98424,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "spadochroniarzy",
+   "name": "Spadochroniarzy",
+   "ttss_stop_point": "008296",
+   "lat": 50.0799,
+   "lon": 19.9815,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "akacjowa",
+   "name": "Akacjowa",
+   "ttss_stop_point": "007503",
+   "lat": 50.08152,
+   "lon": 19.97694,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "rondo_mlynskie",
+   "name": "Rondo Młyńskie",
+   "ttss_stop_point": "013740",
+   "lat": 50.08031,
+   "lon": 19.97286,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "pilotow",
+   "name": "Pilotów",
+   "ttss_stop_point": "007504",
+   "lat": 50.07791,
+   "lon": 19.97026,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "lukasiewicza",
+   "name": "Łukasiewicza",
+   "ttss_stop_point": "007461",
+   "lat": 50.07527,
+   "lon": 19.96546,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "cmentarz_rakowicki",
+   "name": "Cmentarz Rakowicki",
+   "ttss_stop_point": "013052",
+   "lat": 50.07368,
+   "lon": 19.95853,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "uniwersytet_ekonomiczny",
+   "name": "Uniwersytet Ekonomiczny",
+   "ttss_stop_point": "012959",
+   "lat": 50.06832,
+   "lon": 19.9517,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "dworzec_glowny_wschod",
+   "name": "Dworzec Główny Wschód",
+   "ttss_stop_point": "018244",
+   "lat": 50.06848,
+   "lon": 19.94943,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "nowy_kleparz",
+   "name": "Nowy Kleparz",
+   "ttss_stop_point": "007430",
+   "lat": 50.07379,
+   "lon": 19.93499,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "radio_krakow",
+   "name": "Radio Kraków",
+   "ttss_stop_point": "014166",
+   "lat": 50.07175,
+   "lon": 19.92933,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "plac_inwalidow",
+   "name": "Plac Inwalidów",
+   "ttss_stop_point": "009916",
+   "lat": 50.06881,
+   "lon": 19.9259,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "agh_ur",
+   "name": "AGH / UR",
+   "ttss_stop_point": "012307",
+   "lat": 50.06283,
+   "lon": 19.92314,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
+  },
+  {
+   "id": "muzeum_narodowe",
+   "name": "Muzeum Narodowe",
+   "ttss_stop_point": "012940",
+   "lat": 50.05864,
+   "lon": 19.9252,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "konopnickiej",
+   "name": "Konopnickiej",
+   "ttss_stop_point": "010559",
+   "lat": 50.05285,
+   "lon": 19.92919,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  },
+  {
+   "id": "os_podwawelskie",
+   "name": "Os. Podwawelskie",
+   "ttss_stop_point": "011321",
+   "lat": 50.04607,
+   "lon": 19.93265,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": null,
+   "tactile_paving": null,
+   "voice_departure_board": null
+  }
+ ],
+ "places": [
+  {
+   "id": "rynek_glowny",
+   "name": "Rynek Główny",
+   "lat": 50.0617,
+   "lon": 19.9373
+  },
+  {
+   "id": "agh_a0",
+   "name": "AGH, budynek A-0",
+   "lat": 50.0646,
+   "lon": 19.923
+  },
+  {
+   "id": "dworzec_glowny_poi",
+   "name": "Dworzec Główny PKP",
+   "lat": 50.0677,
+   "lon": 19.9475
+  },
+  {
+   "id": "kampus_uj_poi",
+   "name": "Kampus UJ, ul. Łojasiewicza 6",
+   "lat": 50.0293,
+   "lon": 19.9065
+  }
+ ]
 }

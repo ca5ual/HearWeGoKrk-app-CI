@@ -1,0 +1,1339 @@
+{
+ "fetched_at": "2026-10-03T21:26:24+02:00",
+ "source": "https://api.ttss.pl",
+ "lines": {
+  "T1": {
+   "vehicles": {
+    "HK451": {
+     "num": "HK451",
+     "type": "N8C-NF",
+     "low": 1,
+     "ac": 1
+    },
+    "HK452": {
+     "num": "HK452",
+     "type": "N8C-NF",
+     "low": 1,
+     "ac": 1
+    },
+    "HK455": {
+     "num": "HK455",
+     "type": "N8C-NF",
+     "low": 1,
+     "ac": 1
+    },
+    "RP602": {
+     "num": "RP602",
+     "type": "NGT6 (1)",
+     "low": 2,
+     "ac": 0
+    },
+    "RP639": {
+     "num": "RP639",
+     "type": "NGT6 (3)",
+     "low": 2,
+     "ac": 1
+    },
+    "RP649": {
+     "num": "RP649",
+     "type": "NGT6 (3)",
+     "low": 2,
+     "ac": 1
+    }
+   },
+   "trip": [
+    {
+     "seq": 1,
+     "time": "20:48",
+     "stop": "044219",
+     "name": "Wzgórza Krzesławickie"
+    },
+    {
+     "seq": 2,
+     "time": "20:49",
+     "stop": "268529",
+     "name": "Jarzębiny"
+    },
+    {
+     "seq": 3,
+     "time": "20:50",
+     "stop": "043529",
+     "name": "Darwina"
+    },
+    {
+     "seq": 4,
+     "time": "20:52",
+     "stop": "254319",
+     "name": "Wańkowicza"
+    },
+    {
+     "seq": 5,
+     "time": "20:53",
+     "stop": "303719",
+     "name": "Cienista"
+    },
+    {
+     "seq": 6,
+     "time": "20:54",
+     "stop": "042019",
+     "name": "Teatr Ludowy"
+    },
+    {
+     "seq": 7,
+     "time": "20:57",
+     "stop": "26",
+     "name": "Rondo Kocmyrzowskie im. ks. Gorzelanego"
+    },
+    {
+     "seq": 8,
+     "time": "20:58",
+     "stop": "086719",
+     "name": "Bieńczycka"
+    },
+    {
+     "seq": 9,
+     "time": "21:00",
+     "stop": "040849",
+     "name": "Rondo Czyżyńskie"
+    },
+    {
+     "seq": 10,
+     "time": "21:01",
+     "stop": "13",
+     "name": "Gałczyńskiego"
+    },
+    {
+     "seq": 11,
+     "time": "21:02",
+     "stop": "304129",
+     "name": "Rondo 308. Dywizjonu"
+    },
+    {
+     "seq": 12,
+     "time": "21:04",
+     "stop": "381029",
+     "name": "Ogród Doświadczeń"
+    },
+    {
+     "seq": 13,
+     "time": "21:05",
+     "stop": "287129",
+     "name": "TAURON Arena Kraków Al. Pokoju"
+    },
+    {
+     "seq": 14,
+     "time": "21:07",
+     "stop": "037029",
+     "name": "Dąbie"
+    },
+    {
+     "seq": 15,
+     "time": "21:08",
+     "stop": "036929",
+     "name": "Ofiar Dąbia"
+    },
+    {
+     "seq": 16,
+     "time": "21:09",
+     "stop": "036829",
+     "name": "Fabryczna"
+    },
+    {
+     "seq": 17,
+     "time": "21:10",
+     "stop": "11",
+     "name": "Nullo"
+    },
+    {
+     "seq": 18,
+     "time": "21:11",
+     "stop": "285929",
+     "name": "Teatr Variete"
+    },
+    {
+     "seq": 19,
+     "time": "21:13",
+     "stop": "036539",
+     "name": "Rondo Grzegórzeckie"
+    },
+    {
+     "seq": 20,
+     "time": "21:15",
+     "stop": "012549",
+     "name": "Rondo Mogilskie"
+    },
+    {
+     "seq": 21,
+     "time": "21:16",
+     "stop": "012619",
+     "name": "Lubicz"
+    },
+    {
+     "seq": 22,
+     "time": "21:18",
+     "stop": "324219",
+     "name": "Teatr Słowackiego"
+    },
+    {
+     "seq": 23,
+     "time": "21:20",
+     "stop": "035719",
+     "name": "Poczta Główna"
+    },
+    {
+     "seq": 24,
+     "time": "21:21",
+     "stop": "136019",
+     "name": "Plac Wszystkich Świętych"
+    },
+    {
+     "seq": 25,
+     "time": "21:23",
+     "stop": "032219",
+     "name": "Filharmonia"
+    },
+    {
+     "seq": 26,
+     "time": "21:25",
+     "stop": "031919",
+     "name": "Jubilat"
+    },
+    {
+     "seq": 27,
+     "time": "21:27",
+     "stop": "031319",
+     "name": "Komorowskiego"
+    },
+    {
+     "seq": 28,
+     "time": "21:28",
+     "stop": "031139",
+     "name": "Salwator"
+    },
+    {
+     "seq": 29,
+     "time": "21:29",
+     "stop": "031119",
+     "name": "Salwator"
+    }
+   ]
+  },
+  "T14": {
+   "vehicles": {
+    "HY712": {
+     "num": "HY712",
+     "type": "Stadler Tango II",
+     "low": 2,
+     "ac": 1
+    },
+    "HY722": {
+     "num": "HY722",
+     "type": "Stadler Tango II",
+     "low": 2,
+     "ac": 1
+    },
+    "HY843": {
+     "num": "HY843",
+     "type": "Stadler Tango",
+     "low": 2,
+     "ac": 1
+    },
+    "HY846": {
+     "num": "HY846",
+     "type": "Stadler Tango",
+     "low": 2,
+     "ac": 1
+    },
+    "HY847": {
+     "num": "HY847",
+     "type": "Stadler Tango",
+     "low": 2,
+     "ac": 1
+    },
+    "HY865": {
+     "num": "HY865",
+     "type": "Stadler Tango",
+     "low": 2,
+     "ac": 1
+    }
+   },
+   "trip": [
+    {
+     "seq": 1,
+     "time": "20:31",
+     "stop": "3",
+     "name": "Mistrzejowice"
+    },
+    {
+     "seq": 2,
+     "time": "20:32",
+     "stop": "253829",
+     "name": "Miśnieńska"
+    },
+    {
+     "seq": 3,
+     "time": "20:33",
+     "stop": "037729",
+     "name": "Os. Złotego Wieku"
+    },
+    {
+     "seq": 4,
+     "time": "20:34",
+     "stop": "038329",
+     "name": "Rondo Piastowskie"
+    },
+    {
+     "seq": 5,
+     "time": "20:36",
+     "stop": "038829",
+     "name": "Dunikowskiego"
+    },
+    {
+     "seq": 6,
+     "time": "20:38",
+     "stop": "253929",
+     "name": "Rondo Hipokratesa"
+    },
+    {
+     "seq": 7,
+     "time": "20:39",
+     "stop": "039229",
+     "name": "DH Wanda"
+    },
+    {
+     "seq": 8,
+     "time": "20:42",
+     "stop": "26",
+     "name": "Rondo Kocmyrzowskie im. ks. Gorzelanego"
+    },
+    {
+     "seq": 9,
+     "time": "20:43",
+     "stop": "086719",
+     "name": "Bieńczycka"
+    },
+    {
+     "seq": 10,
+     "time": "20:45",
+     "stop": "040849",
+     "name": "Rondo Czyżyńskie"
+    },
+    {
+     "seq": 11,
+     "time": "20:46",
+     "stop": "13",
+     "name": "Gałczyńskiego"
+    },
+    {
+     "seq": 12,
+     "time": "20:47",
+     "stop": "304129",
+     "name": "Rondo 308. Dywizjonu"
+    },
+    {
+     "seq": 13,
+     "time": "20:49",
+     "stop": "381029",
+     "name": "Ogród Doświadczeń"
+    },
+    {
+     "seq": 14,
+     "time": "20:50",
+     "stop": "287129",
+     "name": "TAURON Arena Kraków Al. Pokoju"
+    },
+    {
+     "seq": 15,
+     "time": "20:52",
+     "stop": "037029",
+     "name": "Dąbie"
+    },
+    {
+     "seq": 16,
+     "time": "20:53",
+     "stop": "036929",
+     "name": "Ofiar Dąbia"
+    },
+    {
+     "seq": 17,
+     "time": "20:54",
+     "stop": "036829",
+     "name": "Fabryczna"
+    },
+    {
+     "seq": 18,
+     "time": "20:55",
+     "stop": "11",
+     "name": "Nullo"
+    },
+    {
+     "seq": 19,
+     "time": "20:56",
+     "stop": "285929",
+     "name": "Teatr Variete"
+    },
+    {
+     "seq": 20,
+     "time": "20:58",
+     "stop": "036539",
+     "name": "Rondo Grzegórzeckie"
+    },
+    {
+     "seq": 21,
+     "time": "21:00",
+     "stop": "012559",
+     "name": "Rondo Mogilskie"
+    },
+    {
+     "seq": 22,
+     "time": "21:02",
+     "stop": "117329",
+     "name": "Dworzec Główny Tunel"
+    },
+    {
+     "seq": 23,
+     "time": "21:03",
+     "stop": "007339",
+     "name": "Politechnika"
+    },
+    {
+     "seq": 24,
+     "time": "21:06",
+     "stop": "007029",
+     "name": "Dworzec Towarowy"
+    }
+   ]
+  },
+  "T12": {
+   "vehicles": {
+    "RG902": {
+     "num": "RG902",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "RG907": {
+     "num": "RG907",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "RG913": {
+     "num": "RG913",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "HG920": {
+     "num": "HG920",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "HG925": {
+     "num": "HG925",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "HG932": {
+     "num": "HG932",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "HG935": {
+     "num": "HG935",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    },
+    "HG936": {
+     "num": "HG936",
+     "type": "2014N",
+     "low": 2,
+     "ac": 1
+    }
+   },
+   "trip": [
+    {
+     "seq": 1,
+     "time": "20:33",
+     "stop": "037819",
+     "name": "Os. Piastów"
+    },
+    {
+     "seq": 2,
+     "time": "20:34",
+     "stop": "037929",
+     "name": "Piasta Kołodzieja"
+    },
+    {
+     "seq": 3,
+     "time": "20:35",
+     "stop": "038229",
+     "name": "Kleeberga"
+    },
+    {
+     "seq": 4,
+     "time": "20:37",
+     "stop": "038319",
+     "name": "Rondo Piastowskie"
+    },
+    {
+     "seq": 5,
+     "time": "20:38",
+     "stop": "037719",
+     "name": "Os. Złotego Wieku"
+    },
+    {
+     "seq": 6,
+     "time": "20:39",
+     "stop": "253819",
+     "name": "Miśnieńska"
+    },
+    {
+     "seq": 7,
+     "time": "20:40",
+     "stop": "33",
+     "name": "Mistrzejowice"
+    },
+    {
+     "seq": 8,
+     "time": "20:41",
+     "stop": "50",
+     "name": "ks. Kurzei"
+    },
+    {
+     "seq": 9,
+     "time": "20:42",
+     "stop": "41",
+     "name": "Marchołta"
+    },
+    {
+     "seq": 10,
+     "time": "20:44",
+     "stop": "37",
+     "name": "Park Wodny"
+    },
+    {
+     "seq": 11,
+     "time": "20:45",
+     "stop": "39",
+     "name": "Rondo Barei"
+    },
+    {
+     "seq": 12,
+     "time": "20:47",
+     "stop": "48",
+     "name": "Rondo Polsad"
+    },
+    {
+     "seq": 13,
+     "time": "20:48",
+     "stop": "31",
+     "name": "Rondo Młyńskie"
+    },
+    {
+     "seq": 14,
+     "time": "20:49",
+     "stop": "44",
+     "name": "Pszona"
+    },
+    {
+     "seq": 15,
+     "time": "20:50",
+     "stop": "36",
+     "name": "Meissnera"
+    },
+    {
+     "seq": 16,
+     "time": "20:52",
+     "stop": "304029",
+     "name": "TAURON Arena Kraków Wieczysta"
+    },
+    {
+     "seq": 17,
+     "time": "20:54",
+     "stop": "013029",
+     "name": "Białucha"
+    },
+    {
+     "seq": 18,
+     "time": "20:56",
+     "stop": "012929",
+     "name": "Cystersów"
+    },
+    {
+     "seq": 19,
+     "time": "20:58",
+     "stop": "012519",
+     "name": "Rondo Mogilskie"
+    },
+    {
+     "seq": 20,
+     "time": "20:59",
+     "stop": "012619",
+     "name": "Lubicz"
+    },
+    {
+     "seq": 21,
+     "time": "21:01",
+     "stop": "324219",
+     "name": "Teatr Słowackiego"
+    },
+    {
+     "seq": 22,
+     "time": "21:03",
+     "stop": "035719",
+     "name": "Poczta Główna"
+    },
+    {
+     "seq": 23,
+     "time": "21:05",
+     "stop": "035829",
+     "name": "Starowiślna"
+    },
+    {
+     "seq": 24,
+     "time": "21:07",
+     "stop": "035939",
+     "name": "Stradom"
+    },
+    {
+     "seq": 25,
+     "time": "21:08",
+     "stop": "036119",
+     "name": "Orzeszkowej"
+    },
+    {
+     "seq": 26,
+     "time": "21:11",
+     "stop": "333819",
+     "name": "Rondo Grunwaldzkie"
+    },
+    {
+     "seq": 27,
+     "time": "21:12",
+     "stop": "057519",
+     "name": "Szwedzka"
+    },
+    {
+     "seq": 28,
+     "time": "21:14",
+     "stop": "057619",
+     "name": "Kapelanka"
+    },
+    {
+     "seq": 29,
+     "time": "21:15",
+     "stop": "057719",
+     "name": "Słomiana"
+    },
+    {
+     "seq": 30,
+     "time": "21:17",
+     "stop": "058419",
+     "name": "Kobierzyńska"
+    },
+    {
+     "seq": 31,
+     "time": "21:19",
+     "stop": "268619",
+     "name": "Lipińskiego"
+    },
+    {
+     "seq": 32,
+     "time": "21:20",
+     "stop": "268719",
+     "name": "Grota-Roweckiego"
+    },
+    {
+     "seq": 33,
+     "time": "21:21",
+     "stop": "268819",
+     "name": "Norymberska"
+    },
+    {
+     "seq": 34,
+     "time": "21:23",
+     "stop": "058919",
+     "name": "Ruczaj"
+    },
+    {
+     "seq": 35,
+     "time": "21:24",
+     "stop": "269019",
+     "name": "Kampus UJ"
+    },
+    {
+     "seq": 36,
+     "time": "21:25",
+     "stop": "22",
+     "name": "Kampus UP JP II"
+    },
+    {
+     "seq": 37,
+     "time": "21:27",
+     "stop": "303819",
+     "name": "Czerwone Maki P+R"
+    }
+   ]
+  },
+  "B124": {
+   "vehicles": {
+    "DE624": {
+     "num": "DE624",
+     "type": "Solaris Urbino 12 IV Electric",
+     "low": 2,
+     "ac": 2
+    },
+    "DE625": {
+     "num": "DE625",
+     "type": "Solaris Urbino 12 IV Electric",
+     "low": 2,
+     "ac": 2
+    },
+    "DE627": {
+     "num": "DE627",
+     "type": "Solaris Urbino 12 IV Electric",
+     "low": 2,
+     "ac": 2
+    },
+    "DE629": {
+     "num": "DE629",
+     "type": "Solaris Urbino 12 IV Electric",
+     "low": 2,
+     "ac": 2
+    }
+   },
+   "trip": [
+    {
+     "seq": 1,
+     "time": "20:53",
+     "stop": "011514",
+     "name": "TAURON Arena Kraków Al. Pokoju"
+    },
+    {
+     "seq": 2,
+     "time": "20:54",
+     "stop": "011515",
+     "name": "TAURON Arena Kraków"
+    },
+    {
+     "seq": 3,
+     "time": "20:56",
+     "stop": "013670",
+     "name": "TAURON Arena Kraków Wieczysta"
+    },
+    {
+     "seq": 4,
+     "time": "20:58",
+     "stop": "007457",
+     "name": "Ugorek"
+    },
+    {
+     "seq": 5,
+     "time": "20:59",
+     "stop": "008296",
+     "name": "Spadochroniarzy"
+    },
+    {
+     "seq": 6,
+     "time": "21:00",
+     "stop": "007503",
+     "name": "Akacjowa"
+    },
+    {
+     "seq": 7,
+     "time": "21:02",
+     "stop": "013740",
+     "name": "Rondo Młyńskie"
+    },
+    {
+     "seq": 8,
+     "time": "21:03",
+     "stop": "007504",
+     "name": "Pilotów"
+    },
+    {
+     "seq": 9,
+     "time": "21:04",
+     "stop": "007461",
+     "name": "Łukasiewicza"
+    },
+    {
+     "seq": 10,
+     "time": "21:06",
+     "stop": "013052",
+     "name": "Cmentarz Rakowicki"
+    },
+    {
+     "seq": 11,
+     "time": "21:08",
+     "stop": "011432",
+     "name": "Rondo Mogilskie"
+    },
+    {
+     "seq": 12,
+     "time": "21:09",
+     "stop": "012959",
+     "name": "Uniwersytet Ekonomiczny"
+    },
+    {
+     "seq": 13,
+     "time": "21:11",
+     "stop": "018244",
+     "name": "Dworzec Główny Wschód"
+    },
+    {
+     "seq": 14,
+     "time": "21:13",
+     "stop": "009149",
+     "name": "Politechnika"
+    },
+    {
+     "seq": 15,
+     "time": "21:16",
+     "stop": "007430",
+     "name": "Nowy Kleparz"
+    },
+    {
+     "seq": 16,
+     "time": "21:17",
+     "stop": "014166",
+     "name": "Radio Kraków"
+    },
+    {
+     "seq": 17,
+     "time": "21:19",
+     "stop": "009916",
+     "name": "Plac Inwalidów"
+    },
+    {
+     "seq": 18,
+     "time": "21:21",
+     "stop": "012307",
+     "name": "AGH / UR"
+    },
+    {
+     "seq": 19,
+     "time": "21:23",
+     "stop": "012940",
+     "name": "Muzeum Narodowe"
+    },
+    {
+     "seq": 20,
+     "time": "21:24",
+     "stop": "012967",
+     "name": "Jubilat"
+    },
+    {
+     "seq": 21,
+     "time": "21:25",
+     "stop": "010559",
+     "name": "Konopnickiej"
+    },
+    {
+     "seq": 22,
+     "time": "21:27",
+     "stop": "013177",
+     "name": "Rondo Grunwaldzkie"
+    },
+    {
+     "seq": 23,
+     "time": "21:28",
+     "stop": "011321",
+     "name": "Os. Podwawelskie"
+    }
+   ]
+  }
+ },
+ "stops": {
+  "t:11": {
+   "name": "Nullo",
+   "lat": 50.060173,
+   "lon": 19.967382
+  },
+  "t:13": {
+   "name": "Gałczyńskiego",
+   "lat": 50.069417,
+   "lon": 20.012742
+  },
+  "t:3": {
+   "name": "Mistrzejowice",
+   "lat": 50.09486,
+   "lon": 19.995525
+  },
+  "t:33": {
+   "name": "Mistrzejowice",
+   "lat": 50.095423,
+   "lon": 19.995568
+  },
+  "t:22": {
+   "name": "Kampus UP JP II",
+   "lat": 50.020377,
+   "lon": 19.897505
+  },
+  "t:26": {
+   "name": "Rondo Kocmyrzowskie im. ks. Gorzelanego",
+   "lat": 50.07905,
+   "lon": 20.026486
+  },
+  "t:31": {
+   "name": "Rondo Młyńskie",
+   "lat": 50.081519,
+   "lon": 19.972606
+  },
+  "t:36": {
+   "name": "Meissnera",
+   "lat": 50.074915,
+   "lon": 19.979684
+  },
+  "t:37": {
+   "name": "Park Wodny",
+   "lat": 50.090038,
+   "lon": 19.982556
+  },
+  "t:39": {
+   "name": "Rondo Barei",
+   "lat": 50.089267,
+   "lon": 19.976148
+  },
+  "t:41": {
+   "name": "Marchołta",
+   "lat": 50.091614,
+   "lon": 19.98776
+  },
+  "t:44": {
+   "name": "Pszona",
+   "lat": 50.078091,
+   "lon": 19.977335
+  },
+  "t:48": {
+   "name": "Rondo Polsad",
+   "lat": 50.084708,
+   "lon": 19.97087
+  },
+  "t:50": {
+   "name": "ks. Kurzei",
+   "lat": 50.095131,
+   "lon": 19.990059
+  },
+  "t:007029": {
+   "name": "Dworzec Towarowy",
+   "lat": 50.07592,
+   "lon": 19.94038
+  },
+  "t:007339": {
+   "name": "Politechnika",
+   "lat": 50.071143,
+   "lon": 19.945072
+  },
+  "t:012519": {
+   "name": "Rondo Mogilskie",
+   "lat": 50.065782,
+   "lon": 19.959639
+  },
+  "t:012549": {
+   "name": "Rondo Mogilskie",
+   "lat": 50.064973,
+   "lon": 19.959357
+  },
+  "t:012559": {
+   "name": "Rondo Mogilskie",
+   "lat": 50.066002,
+   "lon": 19.958722
+  },
+  "t:012619": {
+   "name": "Lubicz",
+   "lat": 50.065186,
+   "lon": 19.952104
+  },
+  "t:012929": {
+   "name": "Cystersów",
+   "lat": 50.06654,
+   "lon": 19.969149
+  },
+  "t:013029": {
+   "name": "Białucha",
+   "lat": 50.067597,
+   "lon": 19.977192
+  },
+  "t:031119": {
+   "name": "Salwator",
+   "lat": 50.052708,
+   "lon": 19.913739
+  },
+  "t:031139": {
+   "name": "Salwator",
+   "lat": 50.05263,
+   "lon": 19.917407
+  },
+  "t:031319": {
+   "name": "Komorowskiego",
+   "lat": 50.053451,
+   "lon": 19.921873
+  },
+  "t:031919": {
+   "name": "Jubilat",
+   "lat": 50.055498,
+   "lon": 19.928109
+  },
+  "t:032219": {
+   "name": "Filharmonia",
+   "lat": 50.05903,
+   "lon": 19.93387
+  },
+  "t:035719": {
+   "name": "Poczta Główna",
+   "lat": 50.059797,
+   "lon": 19.942404
+  },
+  "t:035829": {
+   "name": "Starowiślna",
+   "lat": 50.05689,
+   "lon": 19.945029
+  },
+  "t:035939": {
+   "name": "Stradom",
+   "lat": 50.052258,
+   "lon": 19.942061
+  },
+  "t:036119": {
+   "name": "Orzeszkowej",
+   "lat": 50.050631,
+   "lon": 19.938671
+  },
+  "t:036539": {
+   "name": "Rondo Grzegórzeckie",
+   "lat": 50.058426,
+   "lon": 19.959244
+  },
+  "t:036829": {
+   "name": "Fabryczna",
+   "lat": 50.060251,
+   "lon": 19.971272
+  },
+  "t:036929": {
+   "name": "Ofiar Dąbia",
+   "lat": 50.059629,
+   "lon": 19.976271
+  },
+  "t:037029": {
+   "name": "Dąbie",
+   "lat": 50.060709,
+   "lon": 19.979012
+  },
+  "t:037719": {
+   "name": "Os. Złotego Wieku",
+   "lat": 50.093749,
+   "lon": 20.004333
+  },
+  "t:037729": {
+   "name": "Os. Złotego Wieku",
+   "lat": 50.093667,
+   "lon": 20.004478
+  },
+  "t:037819": {
+   "name": "Os. Piastów",
+   "lat": 50.101977,
+   "lon": 20.012058
+  },
+  "t:037929": {
+   "name": "Piasta Kołodzieja",
+   "lat": 50.098526,
+   "lon": 20.013051
+  },
+  "t:038229": {
+   "name": "Kleeberga",
+   "lat": 50.095759,
+   "lon": 20.012638
+  },
+  "t:038319": {
+   "name": "Rondo Piastowskie",
+   "lat": 50.094372,
+   "lon": 20.011221
+  },
+  "t:038329": {
+   "name": "Rondo Piastowskie",
+   "lat": 50.094355,
+   "lon": 20.011302
+  },
+  "t:038829": {
+   "name": "Dunikowskiego",
+   "lat": 50.092518,
+   "lon": 20.015491
+  },
+  "t:039229": {
+   "name": "DH Wanda",
+   "lat": 50.084432,
+   "lon": 20.020689
+  },
+  "t:040849": {
+   "name": "Rondo Czyżyńskie",
+   "lat": 50.072758,
+   "lon": 20.017068
+  },
+  "t:042019": {
+   "name": "Teatr Ludowy",
+   "lat": 50.082264,
+   "lon": 20.032708
+  },
+  "t:043529": {
+   "name": "Darwina",
+   "lat": 50.089452,
+   "lon": 20.058994
+  },
+  "t:044219": {
+   "name": "Wzgórza Krzesławickie",
+   "lat": 50.094595,
+   "lon": 20.064858
+  },
+  "t:057519": {
+   "name": "Szwedzka",
+   "lat": 50.046721,
+   "lon": 19.925299
+  },
+  "t:057619": {
+   "name": "Kapelanka",
+   "lat": 50.044913,
+   "lon": 19.922059
+  },
+  "t:057719": {
+   "name": "Słomiana",
+   "lat": 50.041404,
+   "lon": 19.9241
+  },
+  "t:058419": {
+   "name": "Kobierzyńska",
+   "lat": 50.03444,
+   "lon": 19.925931
+  },
+  "t:058919": {
+   "name": "Ruczaj",
+   "lat": 50.026932,
+   "lon": 19.905181
+  },
+  "t:086719": {
+   "name": "Bieńczycka",
+   "lat": 50.075661,
+   "lon": 20.02044
+  },
+  "t:117329": {
+   "name": "Dworzec Główny Tunel",
+   "lat": 50.068258,
+   "lon": 19.947641
+  },
+  "t:136019": {
+   "name": "Plac Wszystkich Świętych",
+   "lat": 50.05912,
+   "lon": 19.93824
+  },
+  "t:253819": {
+   "name": "Miśnieńska",
+   "lat": 50.094489,
+   "lon": 19.999999
+  },
+  "t:253829": {
+   "name": "Miśnieńska",
+   "lat": 50.094406,
+   "lon": 20.000154
+  },
+  "t:253929": {
+   "name": "Rondo Hipokratesa",
+   "lat": 50.090094,
+   "lon": 20.021355
+  },
+  "t:254319": {
+   "name": "Wańkowicza",
+   "lat": 50.086978,
+   "lon": 20.04756
+  },
+  "t:268529": {
+   "name": "Jarzębiny",
+   "lat": 50.091985,
+   "lon": 20.061099
+  },
+  "t:268619": {
+   "name": "Lipińskiego",
+   "lat": 50.030792,
+   "lon": 19.924804
+  },
+  "t:268719": {
+   "name": "Grota-Roweckiego",
+   "lat": 50.031867,
+   "lon": 19.920212
+  },
+  "t:268819": {
+   "name": "Norymberska",
+   "lat": 50.029809,
+   "lon": 19.912225
+  },
+  "t:269019": {
+   "name": "Kampus UJ",
+   "lat": 50.024044,
+   "lon": 19.901485
+  },
+  "t:285929": {
+   "name": "Teatr Variete",
+   "lat": 50.058827,
+   "lon": 19.962374
+  },
+  "t:287129": {
+   "name": "TAURON Arena Kraków Al. Pokoju",
+   "lat": 50.064416,
+   "lon": 19.990077
+  },
+  "t:303719": {
+   "name": "Cienista",
+   "lat": 50.08539,
+   "lon": 20.03852
+  },
+  "t:303819": {
+   "name": "Czerwone Maki P+R",
+   "lat": 50.017986,
+   "lon": 19.889106
+  },
+  "t:304029": {
+   "name": "TAURON Arena Kraków Wieczysta",
+   "lat": 50.071103,
+   "lon": 19.982871
+  },
+  "t:304129": {
+   "name": "Rondo 308. Dywizjonu",
+   "lat": 50.067398,
+   "lon": 20.005374
+  },
+  "t:324219": {
+   "name": "Teatr Słowackiego",
+   "lat": 50.064609,
+   "lon": 19.945628
+  },
+  "t:333819": {
+   "name": "Rondo Grunwaldzkie",
+   "lat": 50.048567,
+   "lon": 19.930917
+  },
+  "t:381029": {
+   "name": "Ogród Doświadczeń",
+   "lat": 50.065502,
+   "lon": 19.996324
+  },
+  "b:011514": {
+   "name": "TAURON Arena Kraków Al. Pokoju",
+   "lat": 50.06484,
+   "lon": 19.98939
+  },
+  "b:018244": {
+   "name": "Dworzec Główny Wschód",
+   "lat": 50.06848,
+   "lon": 19.94943
+  },
+  "b:011321": {
+   "name": "Os. Podwawelskie",
+   "lat": 50.04607,
+   "lon": 19.93265
+  },
+  "b:010559": {
+   "name": "Konopnickiej",
+   "lat": 50.05285,
+   "lon": 19.92919
+  },
+  "b:013177": {
+   "name": "Rondo Grunwaldzkie",
+   "lat": 50.04825,
+   "lon": 19.93234
+  },
+  "b:011515": {
+   "name": "TAURON Arena Kraków",
+   "lat": 50.06802,
+   "lon": 19.98879
+  },
+  "b:011432": {
+   "name": "Rondo Mogilskie",
+   "lat": 50.06705,
+   "lon": 19.95793
+  },
+  "b:013670": {
+   "name": "TAURON Arena Kraków Wieczysta",
+   "lat": 50.07168,
+   "lon": 19.984
+  },
+  "b:012967": {
+   "name": "Jubilat",
+   "lat": 50.05609,
+   "lon": 19.92672
+  },
+  "b:012940": {
+   "name": "Muzeum Narodowe",
+   "lat": 50.05864,
+   "lon": 19.9252
+  },
+  "b:012307": {
+   "name": "AGH / UR",
+   "lat": 50.06283,
+   "lon": 19.92314
+  },
+  "b:009916": {
+   "name": "Plac Inwalidów",
+   "lat": 50.06881,
+   "lon": 19.9259
+  },
+  "b:014166": {
+   "name": "Radio Kraków",
+   "lat": 50.07175,
+   "lon": 19.92933
+  },
+  "b:007430": {
+   "name": "Nowy Kleparz",
+   "lat": 50.07379,
+   "lon": 19.93499
+  },
+  "b:009149": {
+   "name": "Politechnika",
+   "lat": 50.07109,
+   "lon": 19.94511
+  },
+  "b:012959": {
+   "name": "Uniwersytet Ekonomiczny",
+   "lat": 50.06832,
+   "lon": 19.9517
+  },
+  "b:013052": {
+   "name": "Cmentarz Rakowicki",
+   "lat": 50.07368,
+   "lon": 19.95853
+  },
+  "b:007461": {
+   "name": "Łukasiewicza",
+   "lat": 50.07527,
+   "lon": 19.96546
+  },
+  "b:007504": {
+   "name": "Pilotów",
+   "lat": 50.07791,
+   "lon": 19.97026
+  },
+  "b:013740": {
+   "name": "Rondo Młyńskie",
+   "lat": 50.08031,
+   "lon": 19.97286
+  },
+  "b:007503": {
+   "name": "Akacjowa",
+   "lat": 50.08152,
+   "lon": 19.97694
+  },
+  "b:008296": {
+   "name": "Spadochroniarzy",
+   "lat": 50.0799,
+   "lon": 19.9815
+  },
+  "b:007457": {
+   "name": "Ugorek",
+   "lat": 50.07706,
+   "lon": 19.98424
+  }
+ }
+}

@@ -30,6 +30,19 @@ type Component = UiPayload["component"];
 // If the server sends nothing for this long while we wait for an answer, the connection is
 // probably dead (Wi-Fi dropped it silently): give up, tell the user, reconnect.
 const REPLY_TIMEOUT_MS = 45000; // > a slow Claude turn (tool round + one SDK retry)
+
+// Hands-free purchase answer: after "…Potwierdzasz?" the mic opens by itself and closes when the
+// user goes quiet. Metering is in dBFS (-160 … 0). Levels are relative to the room's noise floor,
+// measured while listening: fixed thresholds failed in a noisy hall (the "silence" never came,
+// so the phone kept recording for the whole window and the "tak" was never sent).
+const VAD_CALIBRATE_MS = 300;    // right after the mic opens: just learn the noise floor
+const VAD_SPEECH_ABOVE_DB = 12;  // this much above the floor = the user is talking
+const VAD_QUIET_ABOVE_DB = 6;    // back below floor + this = a pause
+const VAD_END_SILENCE_MS = 800;
+const VAD_MAX_ANSWER_MS = 4000;  // "tak" / "nie" is short: send at the latest 4 s after speech began
+// How long the mic stays open = the server's confirmation window (pending.timeoutS, 30 s):
+// nothing said by then -> send nothing, the server's silence retry takes over.
+const VAD_NO_METERING_MS = 4000; // device without metering: fixed listening window
 type UiData = { [K in Component]?: Extract<UiPayload, { component: K }>["data"] };
 
 export type Pending = { id: string; timeoutS: number; data: PreparedTicket; receivedAt: number };
@@ -53,6 +66,8 @@ type AgentCtx = {
   refreshWallet: () => void;
   headphones: boolean;
   setHeadphones: (v: boolean) => void;
+  useGps: boolean;                       // off = backend uses the venue (Tauron Arena), for filming anywhere
+  setUseGps: (v: boolean) => void;
   lang: "pl" | "en";
   setLang: (l: "pl" | "en") => void;
   sendText: (text: string) => void;
@@ -63,6 +78,7 @@ type AgentCtx = {
   confirmPending: () => void;
   cancelPending: () => void;
   extendPending: () => void;             // "more time" on the purchase confirmation (WCAG 2.2.1)
+  answerNow: () => void;                 // stop reading the purchase question, listen for "tak"/"nie" now
   replay: () => void;
 };
 
@@ -89,12 +105,17 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [headphones, setHeadphones] = useState(false); // no headphone detection in Expo Go: privacy-safe default
   const [lang, setLang] = useState<"pl" | "en">("pl");
+  const [useGps, setUseGps] = useState(false); // pitch default: no real GPS, demo starts at the venue
 
   const ws = useRef<WebSocket | null>(null);
   const coords = useRef<Coords | null>(null);
   const reply = useRef<{ text: string; chunks: string[] } | null>(null);
-  const settings = useRef({ headphones, lang });
+  const settings = useRef({ headphones, lang, useGps });
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Pending | null>(null);
+  const afterReply = useRef<() => void>(() => {});
+  const vad = useRef<ReturnType<typeof setInterval> | null>(null);
+  const playbackFallback = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
 
@@ -132,7 +153,8 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const sendContext = useCallback(() => {
     send({
       type: "context",
-      ...(coords.current ? { lat: coords.current.lat, lon: coords.current.lon } : {}),
+      gps: settings.current.useGps,
+      ...(settings.current.useGps && coords.current ? { lat: coords.current.lat, lon: coords.current.lon } : {}),
       headphones: settings.current.headphones,
       lang: settings.current.lang,
     });
@@ -159,8 +181,24 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
           const r = reply.current;
           reply.current = null;
           if (r) {
-            if (r.chunks.length) playReplyAudio(r.chunks);
-            else speakText(r.text, settings.current.lang); // backend TTS not wired yet -> phone voice
+            // The server is done, but the phone is only starting to read the reply: "speaking"
+            // until playback ends (the purchase sheet offers "Przerwij i odpowiedz" meanwhile).
+            setState("speaking");
+            let finished = false;
+            const done = () => {
+              if (finished) return;
+              finished = true;
+              if (playbackFallback.current) clearTimeout(playbackFallback.current);
+              playbackFallback.current = null;
+              setState((st) => (st === "speaking" ? "idle" : st));
+              afterReply.current();
+            };
+            // If the player never reports the end, don't stay deaf. (beginTurn clears it when the
+            // user interrupts, so it can't open the mic in the middle of a later turn.)
+            if (playbackFallback.current) clearTimeout(playbackFallback.current);
+            playbackFallback.current = setTimeout(done, (r.text.length / 11 + 3) * 1000);
+            if (r.chunks.length) playReplyAudio(r.chunks, done);
+            else speakText(r.text, settings.current.lang, done); // backend TTS not wired yet -> phone voice
           }
         }
         break;
@@ -245,21 +283,30 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   // GPS + settings -> context message.
   useEffect(() => {
+    if (!useGps) return;
     let unsub = () => {};
+    let cancelled = false;
     watchLocation((c) => {
       coords.current = c;
       sendContext();
-    }).then((u) => (unsub = u)).catch(() => {});
-    return () => unsub();
-  }, [sendContext]);
+    }).then((u) => (cancelled ? u() : (unsub = u))).catch(() => {});
+    return () => {
+      cancelled = true;
+      unsub();
+      coords.current = null;
+    };
+  }, [useGps, sendContext]);
 
   useEffect(() => {
-    settings.current = { headphones, lang };
+    settings.current = { headphones, lang, useGps };
     sendContext();
-  }, [headphones, lang, sendContext]);
+  }, [headphones, lang, useGps, sendContext]);
+
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
 
   // Client-side safety net: the backend hard-expires a purchase after 2 * timeout + 5 s.
-  // (It does not announce a voice "nie", so this also closes a modal left open after one.)
   useEffect(() => {
     if (!pending) return;
     const ms = (pending.timeoutS * 2 + 5) * 1000 - (Date.now() - pending.receivedAt);
@@ -269,7 +316,10 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   // --- actions --------------------------------------------------------------
   const beginTurn = () => {
-    stopPlayback();
+    if (playbackFallback.current) clearTimeout(playbackFallback.current);
+    playbackFallback.current = null;
+    stopPlayback(); // an interrupted reply never calls its onDone, so leave "speaking" here
+    setState((st) => (st === "speaking" ? "idle" : st));
     setNotice(null);
   };
 
@@ -303,7 +353,13 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     }
   }, [recorder]);
 
+  const stopVad = () => {
+    if (vad.current) clearInterval(vad.current);
+    vad.current = null;
+  };
+
   const stopListening = useCallback(async () => {
+    stopVad();
     if (mic.current === "starting") {
       stopRequested.current = true; // startListening finishes, then calls us again
       return;
@@ -333,8 +389,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     else notConnected();
   }, [recorder, send, waitForReply, notConnected, micFailed]);
 
-  /** Abort a recording: nothing is sent, nothing happens. */
-  const cancelListening = useCallback(async () => {
+  /** Abort a recording: nothing is sent, nothing happens. `quiet`: the hands-free mic heard nothing. */
+  const cancelListening = useCallback(async (quiet = false) => {
+    stopVad();
     if (mic.current === "starting") {
       cancelRequested.current = true;
       return;
@@ -347,11 +404,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     mic.current = "idle";
     setState("idle");
+    if (quiet) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     setNotice("Anulowano. Nic nie zostało wysłane.");
   }, [resetRecorder]);
 
-  const startListening = useCallback(async () => {
+  const startListening = useCallback(async (auto = false) => {
     if (mic.current !== "idle") return; // a second press while starting/stopping: ignore
     mic.current = "starting";
     stopRequested.current = false;
@@ -376,7 +434,56 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     setState("listening");
     if (cancelRequested.current) cancelListening();
     else if (stopRequested.current) stopListening(); // released during the permission dialog / prepare
+    else if (auto) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // "the mic is on" for a blind user
+      const t0 = Date.now();
+      const windowMs = (pendingRef.current?.timeoutS ?? 30) * 1000;
+      let floor = Infinity; // quietest level seen = room noise
+      let spokeAt = 0;
+      let quietSince = 0;
+      let metered = false;
+      vad.current = setInterval(() => {
+        const raw = recorder.getStatus().metering;
+        const now = Date.now();
+        // -160 = "no amplitude yet" on Android (first reads), not real silence.
+        const db = raw == null || raw <= -159 ? null : raw;
+        if (db == null) {
+          if (!metered && now - t0 > VAD_NO_METERING_MS) stopListening(); // no metering on this device
+          return;
+        }
+        metered = true;
+        if (db < floor) floor = db;
+        else if (!spokeAt) floor += 0.05; // follow a slowly rising background
+        if (now - t0 < VAD_CALIBRATE_MS) return;
+        if (!spokeAt && db > floor + VAD_SPEECH_ABOVE_DB) {
+          spokeAt = now;
+          console.log(`[vad] speech ${db.toFixed(0)} dB (floor ${floor.toFixed(0)})`);
+        }
+        if (spokeAt) {
+          if (db < floor + VAD_QUIET_ABOVE_DB) quietSince ||= now;
+          else quietSince = 0;
+          if ((quietSince && now - quietSince > VAD_END_SILENCE_MS) || now - spokeAt > VAD_MAX_ANSWER_MS) {
+            console.log(`[vad] end after ${now - spokeAt} ms`);
+            return void stopListening();
+          }
+        } else if (now - t0 > windowMs - 1000) {
+          return void cancelListening(true); // nothing said: the server's silence retry takes over
+        }
+      }, 150);
+    }
   }, [recorder, resetRecorder, micFailed, stopListening, cancelListening]);
+
+  // A purchase is waiting for "tak"/"nie" and the question has just been read out: listen by
+  // itself, so the answer needs no button (the confirmation sheet may cover the Mów button).
+  useEffect(() => {
+    afterReply.current = () => {
+      const p = pendingRef.current;
+      if (!p || mic.current !== "idle" || ws.current?.readyState !== WebSocket.OPEN) return;
+      send({ type: "listening", id: p.id }); // the server's silence timer starts now, not mid-question
+      setPending((q) => (q && q.id === p.id ? { ...q, receivedAt: Date.now() } : q)); // same for the countdown
+      startListening(true);
+    };
+  }, [send, startListening]);
 
   const stop = useCallback(() => {
     beginTurn();
@@ -404,6 +511,8 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   useAnnounce(notice);
   useAnnounce(connection === "closed" ? "Brak połączenia z serwerem" : null);
 
+  const answerNow = useCallback(() => afterReply.current(), []);
+
   const replay = useCallback(() => replayLast(replyText, settings.current.lang), [replyText]);
 
   const setRouteResult = useCallback((r: RouteResult) => {
@@ -413,13 +522,13 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AgentCtx>(
     () => ({
       backendUrl, setBackendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult,
-      pending, notice, trip, wallet, refreshWallet, headphones, setHeadphones, lang, setLang,
-      sendText, startListening, stopListening, cancelListening, stop, confirmPending, cancelPending, extendPending,
-      replay,
+      pending, notice, trip, wallet, refreshWallet, headphones, setHeadphones, useGps, setUseGps, lang, setLang,
+      sendText, startListening: () => startListening(), stopListening, cancelListening: () => cancelListening(),
+      stop, confirmPending, cancelPending, extendPending, answerNow, replay,
     }),
     [backendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult, pending, notice, trip,
-      wallet, refreshWallet, headphones, lang, sendText, startListening, stopListening, cancelListening, stop,
-      confirmPending, cancelPending, extendPending, replay],
+      wallet, refreshWallet, headphones, useGps, lang, sendText, startListening, stopListening, cancelListening, stop,
+      confirmPending, cancelPending, extendPending, answerNow, replay],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

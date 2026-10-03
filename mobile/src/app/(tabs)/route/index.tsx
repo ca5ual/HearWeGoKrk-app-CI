@@ -12,7 +12,7 @@ import { Button, Card, IconText, T, inputOutline, switchColors } from "@/compone
 import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 
 // Destinations the backend knows (mock/routes.json); one tap searches.
-const QUICK = ["Rynek", "AGH", "Dworzec Główny", "Bronowice"];
+const QUICK = ["Rynek", "AGH", "Dworzec Główny", "Kampus UJ"];
 
 export default function RouteSearch() {
   const { backendUrl, setRouteResult, ui } = useAgent();

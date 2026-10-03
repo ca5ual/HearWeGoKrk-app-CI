@@ -1,58 +1,648 @@
 {
-  "_meta": {
-    "note": "MOCK. Line numbers and vehicle models exist in Kraków, but routes, side numbers and assignments are illustrative.",
-    "timing": "All times are minutes relative to simulation start (see mock_realtime.reset_clock). 't' = minutes from the first stop of the trip.",
-    "low_floor_values": "full | partial | none"
-  },
-  "lines": [
+ "_meta": {
+  "note": "Lines, stop order, travel times and vehicles (side number = 'numer boczny', model, low-floor, air-con) from a TTSS snapshot. Headways, delays and boarding hints are curated for the demo. Vehicles with source 'illustrative' are not in TTSS (scenario S5 only).",
+  "snapshot": "2026-10-03T21:26:24+02:00",
+  "generated_by": "scripts/ttss_snapshot.py",
+  "timing": "All times are minutes relative to simulation start (see mock_realtime.reset_clock). 't' = minutes from the venue stop, taken from the real TTSS trip.",
+  "low_floor_values": "full | partial | none (TTSS 'low': 2 | 1 | 0)",
+  "demo": "reset_clock(12) → HG935 (line 12) is on the road; reset_clock(0) → the first 14 is the high-floor RZ105."
+ },
+ "lines": [
+  {
+   "id": "T1",
+   "number": "1",
+   "mode": "tram",
+   "headsign": "Salwator",
+   "first_departure_offset_min": 5,
+   "headway_min": 10,
+   "vehicle_rotation": [
+    "HK451",
+    "HK452",
+    "HK455",
+    "RP602",
+    "RP639",
+    "RP649"
+   ],
+   "delay_pattern_min": [
+    0,
+    2,
+    0,
+    1
+   ],
+   "stops": [
     {
-      "id": "T1", "number": "1", "mode": "tram", "headsign": "Plac Wszystkich Świętych",
-      "first_departure_offset_min": 5, "headway_min": 10,
-      "vehicle_rotation": ["RF305", "RZ601", "RZ614"],
-      "delay_pattern_min": [0, 2, 0, 1],
-      "stops": [
-        { "stop": "tauron_arena", "t": 0 },
-        { "stop": "rondo_grzegorzeckie", "t": 4 },
-        { "stop": "hala_targowa", "t": 7 },
-        { "stop": "starowislna", "t": 9 },
-        { "stop": "poczta_glowna", "t": 11 },
-        { "stop": "plac_wszystkich_swietych", "t": 13 }
-      ]
+     "stop": "tauron_arena",
+     "t": 0
     },
     {
-      "id": "T14", "number": "14", "mode": "tram", "headsign": "Bronowice Małe",
-      "first_departure_offset_min": 3, "headway_min": 8,
-      "vehicle_rotation": ["HY854", "RZ612", "NF417"],
-      "delay_pattern_min": [3, 0, 1],
-      "stops": [
-        { "stop": "tauron_arena", "t": 0 },
-        { "stop": "rondo_mogilskie", "t": 4 },
-        { "stop": "dworzec_glowny", "t": 7 },
-        { "stop": "teatr_bagatela", "t": 11 },
-        { "stop": "agh_ur", "t": 14 },
-        { "stop": "bronowice_male", "t": 22 }
-      ]
+     "stop": "dabie",
+     "t": 2
     },
     {
-      "id": "B152", "number": "152", "mode": "bus", "headsign": "Dworzec Główny Zachód",
-      "first_departure_offset_min": 6, "headway_min": 15,
-      "vehicle_rotation": ["BR785", "BR792"],
-      "delay_pattern_min": [0, 4],
-      "stops": [
-        { "stop": "tauron_arena", "t": 0 },
-        { "stop": "rondo_mogilskie", "t": 5 },
-        { "stop": "dworzec_glowny_zachod", "t": 10 }
-      ]
+     "stop": "ofiar_dabia",
+     "t": 3
+    },
+    {
+     "stop": "fabryczna",
+     "t": 4
+    },
+    {
+     "stop": "nullo",
+     "t": 5
+    },
+    {
+     "stop": "teatr_variete",
+     "t": 6
+    },
+    {
+     "stop": "rondo_grzegorzeckie",
+     "t": 8
+    },
+    {
+     "stop": "rondo_mogilskie",
+     "t": 10
+    },
+    {
+     "stop": "lubicz",
+     "t": 11
+    },
+    {
+     "stop": "teatr_slowackiego",
+     "t": 13
+    },
+    {
+     "stop": "poczta_glowna",
+     "t": 15
+    },
+    {
+     "stop": "plac_wszystkich_swietych",
+     "t": 16
+    },
+    {
+     "stop": "filharmonia",
+     "t": 18
+    },
+    {
+     "stop": "jubilat",
+     "t": 20
+    },
+    {
+     "stop": "komorowskiego",
+     "t": 22
+    },
+    {
+     "stop": "salwator",
+     "t": 23
     }
-  ],
-  "vehicles": [
-    { "side_number": "HY854", "mode": "tram", "model": "Konstal 105Na", "low_floor": "none", "audio_stop_announcements": false, "air_conditioning": false, "boarding_hint_pl": "Wysokie wejście, trzy stopnie przy każdych drzwiach.", "boarding_hint_en": "High-floor, three steps at every door." },
-    { "side_number": "RZ601", "mode": "tram", "model": "PESA 2014N Krakowiak", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
-    { "side_number": "RZ612", "mode": "tram", "model": "PESA 2014N Krakowiak", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
-    { "side_number": "RZ614", "mode": "tram", "model": "PESA 2014N Krakowiak", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
-    { "side_number": "RF305", "mode": "tram", "model": "Stadler Tramlink (Lajkonik)", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
-    { "side_number": "NF417", "mode": "tram", "model": "Bombardier NGT6", "low_floor": "partial", "audio_stop_announcements": true, "air_conditioning": false, "boarding_hint_pl": "Niska podłoga tylko w środkowym członie — wsiadaj środkowymi drzwiami.", "boarding_hint_en": "Low floor only in the middle section — use the middle doors." },
-    { "side_number": "BR785", "mode": "bus", "model": "Solaris Urbino 18 electric", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Autobus niskopodłogowy, przyklęk. Pierwsze drzwi przy kierowcy.", "boarding_hint_en": "Low-floor bus with kneeling. First door is next to the driver." },
-    { "side_number": "BR792", "mode": "bus", "model": "Solaris Urbino 18 electric", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Autobus niskopodłogowy, przyklęk. Pierwsze drzwi przy kierowcy.", "boarding_hint_en": "Low-floor bus with kneeling. First door is next to the driver." }
-  ]
+   ]
+  },
+  {
+   "id": "T12",
+   "number": "12",
+   "mode": "tram",
+   "headsign": "Czerwone Maki P+R",
+   "first_departure_offset_min": 4,
+   "headway_min": 10,
+   "vehicle_rotation": [
+    "HG935",
+    "HG920",
+    "HG925",
+    "HG932",
+    "HG936",
+    "RG902"
+   ],
+   "delay_pattern_min": [
+    0,
+    1,
+    0
+   ],
+   "stops": [
+    {
+     "stop": "tauron_wieczysta",
+     "t": 0
+    },
+    {
+     "stop": "bialucha",
+     "t": 2
+    },
+    {
+     "stop": "cystersow",
+     "t": 4
+    },
+    {
+     "stop": "rondo_mogilskie",
+     "t": 6
+    },
+    {
+     "stop": "lubicz",
+     "t": 7
+    },
+    {
+     "stop": "teatr_slowackiego",
+     "t": 9
+    },
+    {
+     "stop": "poczta_glowna",
+     "t": 11
+    },
+    {
+     "stop": "starowislna",
+     "t": 13
+    },
+    {
+     "stop": "stradom",
+     "t": 15
+    },
+    {
+     "stop": "orzeszkowej",
+     "t": 16
+    },
+    {
+     "stop": "rondo_grunwaldzkie",
+     "t": 19
+    },
+    {
+     "stop": "szwedzka",
+     "t": 20
+    },
+    {
+     "stop": "kapelanka",
+     "t": 22
+    },
+    {
+     "stop": "slomiana",
+     "t": 23
+    },
+    {
+     "stop": "kobierzynska",
+     "t": 25
+    },
+    {
+     "stop": "lipinskiego",
+     "t": 27
+    },
+    {
+     "stop": "grota_roweckiego",
+     "t": 28
+    },
+    {
+     "stop": "norymberska",
+     "t": 29
+    },
+    {
+     "stop": "ruczaj",
+     "t": 31
+    },
+    {
+     "stop": "kampus_uj",
+     "t": 32
+    },
+    {
+     "stop": "kampus_up_jp_ii",
+     "t": 33
+    },
+    {
+     "stop": "czerwone_maki_p_r",
+     "t": 35
+    }
+   ]
+  },
+  {
+   "id": "T14",
+   "number": "14",
+   "mode": "tram",
+   "headsign": "Dworzec Towarowy",
+   "first_departure_offset_min": 3,
+   "headway_min": 8,
+   "vehicle_rotation": [
+    "RZ105",
+    "HY712",
+    "HY722",
+    "HY843",
+    "HY846",
+    "HY847"
+   ],
+   "delay_pattern_min": [
+    3,
+    0,
+    1
+   ],
+   "stops": [
+    {
+     "stop": "tauron_arena",
+     "t": 0
+    },
+    {
+     "stop": "dabie",
+     "t": 2
+    },
+    {
+     "stop": "ofiar_dabia",
+     "t": 3
+    },
+    {
+     "stop": "fabryczna",
+     "t": 4
+    },
+    {
+     "stop": "nullo",
+     "t": 5
+    },
+    {
+     "stop": "teatr_variete",
+     "t": 6
+    },
+    {
+     "stop": "rondo_grzegorzeckie",
+     "t": 8
+    },
+    {
+     "stop": "rondo_mogilskie",
+     "t": 10
+    },
+    {
+     "stop": "dworzec_glowny_tunel",
+     "t": 12
+    },
+    {
+     "stop": "politechnika",
+     "t": 13
+    },
+    {
+     "stop": "dworzec_towarowy",
+     "t": 16
+    }
+   ]
+  },
+  {
+   "id": "B124",
+   "number": "124",
+   "mode": "bus",
+   "headsign": "Os. Podwawelskie",
+   "first_departure_offset_min": 6,
+   "headway_min": 15,
+   "vehicle_rotation": [
+    "DE624",
+    "DE625",
+    "DE627",
+    "DE629"
+   ],
+   "delay_pattern_min": [
+    0,
+    4
+   ],
+   "stops": [
+    {
+     "stop": "tauron_arena",
+     "t": 0
+    },
+    {
+     "stop": "ugorek",
+     "t": 5
+    },
+    {
+     "stop": "spadochroniarzy",
+     "t": 6
+    },
+    {
+     "stop": "akacjowa",
+     "t": 7
+    },
+    {
+     "stop": "rondo_mlynskie",
+     "t": 9
+    },
+    {
+     "stop": "pilotow",
+     "t": 10
+    },
+    {
+     "stop": "lukasiewicza",
+     "t": 11
+    },
+    {
+     "stop": "cmentarz_rakowicki",
+     "t": 13
+    },
+    {
+     "stop": "rondo_mogilskie",
+     "t": 15
+    },
+    {
+     "stop": "uniwersytet_ekonomiczny",
+     "t": 16
+    },
+    {
+     "stop": "dworzec_glowny_wschod",
+     "t": 18
+    },
+    {
+     "stop": "politechnika",
+     "t": 20
+    },
+    {
+     "stop": "nowy_kleparz",
+     "t": 23
+    },
+    {
+     "stop": "radio_krakow",
+     "t": 24
+    },
+    {
+     "stop": "plac_inwalidow",
+     "t": 26
+    },
+    {
+     "stop": "agh_ur",
+     "t": 28
+    },
+    {
+     "stop": "muzeum_narodowe",
+     "t": 30
+    },
+    {
+     "stop": "jubilat",
+     "t": 31
+    },
+    {
+     "stop": "konopnickiej",
+     "t": 32
+    },
+    {
+     "stop": "rondo_grunwaldzkie",
+     "t": 34
+    },
+    {
+     "stop": "os_podwawelskie",
+     "t": 35
+    }
+   ]
+  }
+ ],
+ "vehicles": [
+  {
+   "side_number": "HK451",
+   "mode": "tram",
+   "model": "N8C-NF",
+   "ttss_type": "N8C-NF",
+   "low_floor": "partial",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga tylko w środkowym członie. Wsiadaj środkowymi drzwiami.",
+   "boarding_hint_en": "Low floor only in the middle section. Board through the middle doors.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HK452",
+   "mode": "tram",
+   "model": "N8C-NF",
+   "ttss_type": "N8C-NF",
+   "low_floor": "partial",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga tylko w środkowym członie. Wsiadaj środkowymi drzwiami.",
+   "boarding_hint_en": "Low floor only in the middle section. Board through the middle doors.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HK455",
+   "mode": "tram",
+   "model": "N8C-NF",
+   "ttss_type": "N8C-NF",
+   "low_floor": "partial",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga tylko w środkowym członie. Wsiadaj środkowymi drzwiami.",
+   "boarding_hint_en": "Low floor only in the middle section. Board through the middle doors.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "RP602",
+   "mode": "tram",
+   "model": "NGT6 (1)",
+   "ttss_type": "NGT6 (1)",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": false,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "RP639",
+   "mode": "tram",
+   "model": "NGT6 (3)",
+   "ttss_type": "NGT6 (3)",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "RP649",
+   "mode": "tram",
+   "model": "NGT6 (3)",
+   "ttss_type": "NGT6 (3)",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HG935",
+   "mode": "tram",
+   "model": "PESA 2014N Krakowiak",
+   "ttss_type": "2014N",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HG920",
+   "mode": "tram",
+   "model": "PESA 2014N Krakowiak",
+   "ttss_type": "2014N",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HG925",
+   "mode": "tram",
+   "model": "PESA 2014N Krakowiak",
+   "ttss_type": "2014N",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HG932",
+   "mode": "tram",
+   "model": "PESA 2014N Krakowiak",
+   "ttss_type": "2014N",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HG936",
+   "mode": "tram",
+   "model": "PESA 2014N Krakowiak",
+   "ttss_type": "2014N",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "RG902",
+   "mode": "tram",
+   "model": "PESA 2014N Krakowiak",
+   "ttss_type": "2014N",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "RZ105",
+   "mode": "tram",
+   "model": "Konstal 105Na",
+   "ttss_type": "105Na",
+   "low_floor": "none",
+   "audio_stop_announcements": false,
+   "air_conditioning": false,
+   "boarding_hint_pl": "Wysokie wejście, trzy stopnie przy każdych drzwiach.",
+   "boarding_hint_en": "High-floor, three steps at every door.",
+   "source": "illustrative"
+  },
+  {
+   "side_number": "HY712",
+   "mode": "tram",
+   "model": "Stadler Tango Lajkonik II",
+   "ttss_type": "Stadler Tango II",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HY722",
+   "mode": "tram",
+   "model": "Stadler Tango Lajkonik II",
+   "ttss_type": "Stadler Tango II",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HY843",
+   "mode": "tram",
+   "model": "Stadler Tango Lajkonik",
+   "ttss_type": "Stadler Tango",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HY846",
+   "mode": "tram",
+   "model": "Stadler Tango Lajkonik",
+   "ttss_type": "Stadler Tango",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "HY847",
+   "mode": "tram",
+   "model": "Stadler Tango Lajkonik",
+   "ttss_type": "Stadler Tango",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Niska podłoga, wejście bez stopni.",
+   "boarding_hint_en": "Low-floor, step-free boarding.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DE624",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DE625",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DE627",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DE629",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  }
+ ]
 }

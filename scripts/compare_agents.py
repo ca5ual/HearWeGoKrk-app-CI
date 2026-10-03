@@ -58,8 +58,8 @@ def _reset(offset_min=0.0):
     DEMO_GPS.update(lat=None, lon=None, follow=None)
 
 
-def _board(side="RZ612"):
-    _reset(12)  # RZ612 is on the road at minute ~12
+def _board(side="HG935"):
+    _reset(12)  # HG935 is on the road at minute ~12
     st = rt.vehicle_status(side)
     DEMO_GPS.update(lat=st["position"]["lat"], lon=st["position"]["lon"], follow=side)
 
@@ -75,10 +75,10 @@ def setup(sc) -> tuple[Session, str]:
         text = "Wsiadłem do tramwaju"  # the scenario is a GPS event; this is the spoken equivalent
     elif sid == "S7":
         _board()
-        s.current_vehicle = "RZ612"  # S6 already matched the vehicle
+        s.current_vehicle = "HG935"  # S6 already matched the vehicle
     elif sid == "S9":
         _board()
-        s.current_vehicle = "RZ612"
+        s.current_vehicle = "HG935"
         s.new_turn()
         wallet.prepare_ticket(s, "kmk_15min_n")  # a purchase awaits confirmation
     return s, text

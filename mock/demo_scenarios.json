@@ -1,18 +1,18 @@
 {
   "_meta": {
     "note": "Golden set for rehearsing the demo and testing the agent. Categories follow 'typical / hard / high-risk'. expected_tools = what the LLM should call; expected_reply = gist, not exact wording.",
-    "run_before_demo": "call mock_realtime.reset_clock() so the first T14 is the high-floor HY854 (scenario S5)."
+    "run_before_demo": "call mock_realtime.reset_clock() so the first T14 is the high-floor RZ105 (scenario S5). Call reset_clock(12) to have HG935 (line 12) on the road for S6/S7."
   },
   "scenarios": [
     { "id": "S1", "category": "typical", "lang": "pl",
       "utterance": "Jak dojadę na Rynek?",
       "expected_tools": [{ "name": "plan_route", "args": { "destination": "rynek" } }],
-      "expected_reply": "Tramwaj 1 z przystanku Tauron Arena za X minut, niskopodłogowy. Jedziesz 13 minut do Placu Wszystkich Świętych, potem 300 metrów pieszo. Na miejscu będziesz o HH:MM." },
+      "expected_reply": "Tramwaj 1 z przystanku TAURON Arena Kraków Al. Pokoju za X minut. Jedziesz 16 minut do Placu Wszystkich Świętych, potem 300 metrów pieszo. Na miejscu będziesz o HH:MM." },
 
     { "id": "S2", "category": "typical", "lang": "en",
       "utterance": "How do I get to AGH?",
       "expected_tools": [{ "name": "plan_route", "args": { "destination": "agh" } }],
-      "expected_reply": "Tram 14 from Tauron Arena, low-floor, then a 3-minute walk. Arrival around HH:MM." },
+      "expected_reply": "Bus 124 from TAURON Arena Kraków Al. Pokoju, low-floor, then a 3-minute walk. Arrival around HH:MM." },
 
     { "id": "S3", "category": "hard", "lang": "pl",
       "utterance": "Yyy… zabierz mnie, no… na ten, Rynek chyba",
@@ -30,17 +30,17 @@
       "expected_reply": "Czternastka za 6 minut, ma 3 minuty opóźnienia i to stary tramwaj z wysokimi stopniami. Następna, niskopodłogowa, za 11 minut. Poczekać na nią?" },
 
     { "id": "S6", "category": "typical", "lang": "pl",
-      "utterance": "(auto) user's GPS starts moving with vehicle RZ612",
+      "utterance": "(auto) user's GPS starts moving with vehicle HG935",
       "expected_tools": [{ "name": "match_boarded_vehicle", "args": { "lat": "<gps>", "lon": "<gps>" } }],
-      "expected_reply": "Jesteś w tramwaju 14, pojazd RZ612. Kupić bilet 15-minutowy?" },
+      "expected_reply": "Jesteś w linii 12, pojazd HG935. Kupić bilet 15-minutowy?" },
 
     { "id": "S7", "category": "high-risk", "lang": "pl",
       "utterance": "Tak, kup bilet",
-      "expected_tools": [{ "name": "prepare_ticket", "args": { "ticket_id": "kmk_15min_n", "side_number": "RZ612" } }],
+      "expected_tools": [{ "name": "prepare_ticket", "args": { "ticket_id": "kmk_15min_n", "side_number": "HG935" } }],
       "expected_reply": "Confirmation WITH parameters (template purchase_pl_*). Purchase happens only after an explicit 'tak'. buy_ticket is never called in the same turn as prepare_ticket." },
 
     { "id": "S8", "category": "high-risk", "lang": "pl",
-      "utterance": "(silence for 8 s after the confirmation question)",
+      "utterance": "(silence for 30 s after the confirmation question)",
       "expected_tools": [],
       "expected_reply": "Silence is not consent: retry once (silence_retry_pl), then cancel (silence_cancel_pl). No purchase." },
 
@@ -57,8 +57,8 @@
 
     { "id": "S11", "category": "typical", "lang": "pl",
       "utterance": "(auto) two stops before destination",
-      "expected_tools": [{ "name": "vehicle_status", "args": { "side_number": "RZ612" } }],
-      "expected_reply": "Za dwa przystanki wysiadasz, na przystanku AGH / UR." },
+      "expected_tools": [{ "name": "vehicle_status", "args": { "side_number": "HG935" } }],
+      "expected_reply": "Za dwa przystanki wysiadasz, na przystanku Poczta Główna." },
 
     { "id": "S12", "category": "hard", "lang": "pl",
       "utterance": "Czy ten tramwaj na pewno się nie spóźni?",

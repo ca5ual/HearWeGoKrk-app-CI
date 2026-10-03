@@ -66,17 +66,17 @@ def test_s10_balance_privacy():
     assert "zł" in r2["reply_text"]
 
 
-def _board_rz612():
-    rt.reset_clock(12)  # RZ612 is on the road at minute ~12
-    assert client.post("/demo/gps", json={"side_number": "RZ612"}).status_code == 200
+def _board_hg935():
+    rt.reset_clock(12)  # HG935 is on the road at minute ~12
+    assert client.post("/demo/gps", json={"side_number": "HG935"}).status_code == 200
 
 
 def test_s6_s7_board_and_buy():
-    _board_rz612()
+    _board_hg935()
     r = say("Wsiadłem")
-    assert "RZ612" in r["reply_text"]
+    assert "HG935" in r["reply_text"]
     r = say("tak", sid=r["session_id"])          # accept the "buy a ticket?" offer
-    assert "Potwierdzasz?" in r["reply_text"] and "RZ612" in r["reply_text"]
+    assert "Potwierdzasz?" in r["reply_text"] and "HG935" in r["reply_text"]
     assert r["pending"]
     before = wallet.get_balance(Session())["balance_pln"]
     r = say("tak", sid=r["session_id"])          # explicit yes in a NEW turn
@@ -85,7 +85,7 @@ def test_s6_s7_board_and_buy():
 
 
 def test_s9_stop_cancels():
-    _board_rz612()
+    _board_hg935()
     r = say("kup bilet")
     assert r["pending"]
     r = say("Stop! Anuluj.", sid=r["session_id"])
@@ -94,7 +94,7 @@ def test_s9_stop_cancels():
 
 def test_confirm_rejected_in_same_turn():
     """Even if an LLM tries prepare+confirm in one turn, the backend refuses."""
-    _board_rz612()
+    _board_hg935()
     s = Session()
     s.new_turn()
     tools.execute(s, "match_boarded_vehicle")
@@ -107,6 +107,36 @@ def test_ticket_needs_vehicle():
     s = Session()
     out = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n"})
     assert out.result["error"] == "missing_side_number"
+
+
+def test_side_number_said_by_user():
+    """No GPS match: the user reads the side number from the sticker, the ticket uses it."""
+    rt.reset_clock(12)
+    r = say("Jestem w HG 935")
+    assert "HG935" in r["reply_text"] and "12" in r["reply_text"]
+    r = say("tak", sid=r["session_id"])
+    assert "Potwierdzasz?" in r["reply_text"] and "HG935" in r["reply_text"]
+    r = say("tak", sid=r["session_id"])
+    assert "HG935" in r["reply_text"] and "Kupione" in r["reply_text"]
+
+
+def test_side_number_forms():
+    for spoken in ("HG935", "hg 935", "h g 9 3 5", "numer boczny 935"):
+        assert rt.find_vehicle(spoken)["side_number"] == "HG935", spoken
+    assert rt.find_vehicle("Kiedy następna 14") is None
+    s = Session()
+    assert tools.execute(s, "set_vehicle", {"side_number": "999"}).result["error"] == "unknown_vehicle"
+    prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": "hg 935"})
+    assert prep.result["side_number"] == "HG935"
+
+
+def test_mock_fleet_is_ttss():
+    """Every vehicle except the S5 one comes from the TTSS snapshot, with TTSS-style side numbers."""
+    import re
+    for v in rt.VEHICLES.values():
+        assert re.fullmatch(r"[A-Z]{2}\d{3}", v["side_number"])
+        assert v["source"] == ("illustrative" if v["side_number"] == "RZ105" else "ttss")
+    assert rt.LINES["T12"]["vehicle_rotation"][0] == "HG935"
 
 
 def test_websocket_text_flow():
@@ -156,7 +186,7 @@ def test_websocket_survives_bad_messages():
 
 
 def test_demo_reset_clears_open_websocket():
-    _board_rz612()
+    _board_hg935()
     with client.websocket_connect("/ws/voice") as ws:
         _until_idle(ws)
         ws.send_json({"type": "text", "text": "kup bilet"})
@@ -166,6 +196,24 @@ def test_demo_reset_clears_open_websocket():
         replies = [m["text"] for m in _until_idle(ws) if m["type"] == "reply_text"]
         assert not any("Kupione" in r for r in replies)
     assert wallet.get_balance(Session())["balance_pln"] == 20.14
+
+
+def test_spoken_answer_closes_the_modal():
+    """Voice "nie" cancels and tells the phone (modal closes); voice "tak" buys without pending_cancelled."""
+    _board_hg935()
+    with client.websocket_connect("/ws/voice") as ws:
+        _until_idle(ws)
+        ws.send_json({"type": "text", "text": "kup bilet"})
+        pid = next(m["id"] for m in _until_idle(ws) if m["type"] == "pending_confirmation")
+        ws.send_json({"type": "text", "text": "nie"})
+        assert {"type": "pending_cancelled", "id": pid} in _until_idle(ws)
+
+        ws.send_json({"type": "text", "text": "kup bilet"})
+        _until_idle(ws)
+        ws.send_json({"type": "text", "text": "tak"})
+        msgs = _until_idle(ws)
+        assert {"type": "haptic", "pattern": "confirm"} in msgs
+        assert not any(m["type"] == "pending_cancelled" for m in msgs)
 
 
 def test_extend_pending_restarts_the_window():
@@ -179,7 +227,7 @@ def test_extend_pending_restarts_the_window():
         conv = voice_ws.Conversation(ws=None)
         s = conv.session
         s.new_turn()
-        _board_rz612()
+        _board_hg935()
         tools.execute(s, "match_boarded_vehicle")
         prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n"})
         pid = prep.result["pending_action_id"]
@@ -189,6 +237,106 @@ def test_extend_pending_restarts_the_window():
         assert conv.extend_pending(pid)
         assert time.time() - s.pending.created_at < 1 and s.pending.retries == 0
         assert s.pending is not None and conv.session.timer_task is not None
+        conv.close()
+
+    asyncio.run(run())
+
+
+def test_listening_restarts_silence_timer_but_keeps_retries():
+    """Hands-free answer: the phone's "listening" restarts the silence window, but after the one
+    retry, silence still cancels (the retry count is not reset, unlike extend_pending)."""
+    import asyncio
+
+    import voice_ws
+
+    async def run():
+        sent = []
+        conv = voice_ws.Conversation(ws=None)
+
+        async def fake_send(type_, **payload):
+            sent.append({"type": type_, **payload})
+        conv.send = fake_send
+        s = conv.session
+        s.new_turn()
+        _board_hg935()
+        tools.execute(s, "match_boarded_vehicle")
+        pid = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n"}).result["pending_action_id"]
+        s.pending.timeout_s = 0.05
+        s.pending.retries = 1                     # the retry was already spoken
+        await conv.handle_message({"type": "listening", "id": "wrong-id"})
+        assert s.timer_task is None
+        await conv.handle_message({"type": "listening", "id": pid})
+        await asyncio.wait_for(s.timer_task, 1)
+        assert s.pending is None                  # straight to cancel, no second retry
+        assert {"type": "pending_cancelled", "id": pid} in sent
+        conv.close()
+
+    asyncio.run(run())
+
+
+def test_long_llm_reply_does_not_eat_the_confirmation_time(monkeypatch):
+    """A chatty LLM answer is replaced by the short confirmation, and the silence window and
+    hard expiry only start after it has been read out."""
+    import asyncio
+    import time
+
+    import agent
+    import voice_ws
+
+    async def chatty(session, text):
+        tools.execute(session, "match_boarded_vehicle")
+        out = tools.execute(session, "prepare_ticket", {"ticket_id": "kmk_15min_n"})
+        return agent.AgentReply("Jasne! Zaraz wszystko przygotuję, to świetny wybór. " * 10, [out])
+
+    async def run():
+        sent = []
+        conv = voice_ws.Conversation(ws=None)
+
+        async def fake_send(type_, **payload):
+            sent.append({"type": type_, **payload})
+        conv.send = fake_send
+        _board_hg935()
+        monkeypatch.setattr(agent, "respond", chatty)
+        await conv.handle_utterance("kup bilet")
+        s = conv.session
+        spoken = [m["text"] for m in sent if m["type"] == "reply_text"]
+        assert spoken == [s.pending and next(m for m in sent if m["type"] == "pending_confirmation")
+                          ["data"]["confirmation_text"]]
+        assert "HG935" in spoken[0] and "Potwierdzasz?" in spoken[0]
+        assert s.pending.created_at > time.time()          # window starts after the question
+        assert not s.pending.hard_expired()
+        conv.close()
+
+    asyncio.run(run())
+
+
+def test_demo_reset_during_a_turn_does_not_crash(monkeypatch):
+    """Tryb demo → Reset / "Wsiadam do HG935" while the agent is still answering: the old turn is
+    dropped instead of crashing on the new session ('NoneType' object has no attribute 'id')."""
+    import asyncio
+
+    import agent
+    import voice_ws
+
+    async def run():
+        sent = []
+        conv = voice_ws.Conversation(ws=None)
+
+        async def fake_send(type_, **payload):
+            sent.append({"type": type_, **payload})
+        conv.send = fake_send
+        _board_hg935()
+        real = agent.respond
+
+        async def reset_midway(session, text):
+            r = await real(session, text)
+            conv.reset()
+            return r
+        monkeypatch.setattr(agent, "respond", reset_midway)
+        await conv.handle_utterance("kup bilet")
+        assert conv.session.pending is None and conv.session.timer_task is None
+        assert not any(m["type"] in ("pending_confirmation", "reply_text") for m in sent)
+        assert sent[-1] == {"type": "state", "value": "idle"}
         conv.close()
 
     asyncio.run(run())

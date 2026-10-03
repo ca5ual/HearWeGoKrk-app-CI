@@ -17,6 +17,7 @@ How time works:
 
 import json
 import math
+import re
 import time
 from pathlib import Path
 
@@ -189,6 +190,22 @@ def vehicle_status(side_number: str) -> dict | None:
     return None
 
 
+def find_vehicle(text: str) -> dict | None:
+    """
+    Side number ("numer boczny") as the user said or typed it -> vehicle, or None.
+    Accepts "HG935", "hg 935", "HG-935", "h g 9 3 5" or just the digits "935", like TTSS
+    (the digits are unique across the fleet; letters, when given, must match too).
+    """
+    up = text.upper()
+    exact = re.search(r"\b([A-Z]{2})[\s-]*(\d{3})\b", up)
+    if exact and exact[1] + exact[2] in VEHICLES:
+        return VEHICLES[exact[1] + exact[2]]
+    # Digits only (speech-to-text often garbles the letters): three digits, maybe spaced "9 3 5".
+    groups = [re.sub(r"\D", "", g) for g in re.findall(r"(?<!\d)\d[\s-]?\d[\s-]?\d(?![\s-]?\d)", up)]
+    hits = {s: v for s, v in VEHICLES.items() for g in groups if s[2:] == g}
+    return next(iter(hits.values())) if len(hits) == 1 else None
+
+
 def match_boarded_vehicle(lat: float, lon: float, line_id: str | None = None,
                           radius_m: float = 80) -> dict | None:
     """
@@ -294,5 +311,6 @@ if __name__ == "__main__":
     # Quick smoke test: python mock_realtime.py
     reset_clock()
     print(json.dumps(get_departures("tauron_arena", "T14", limit=2), ensure_ascii=False, indent=2))
+    print(find_vehicle("ha gie 935"), find_vehicle("HG 935"))
     print(json.dumps(plan_route("yyy na ten rynek chyba"), ensure_ascii=False, indent=2))
     print(resolve_destination("rondo"))

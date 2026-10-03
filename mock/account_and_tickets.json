@@ -16,7 +16,7 @@
     "privacy": {
       "speak_amounts_aloud": "headphones_only",
       "require_confirmation_for_payments": true,
-      "confirmation_timeout_s": 8
+      "confirmation_timeout_s": 30
     },
     "saved_places": [
       {
@@ -27,9 +27,9 @@
           "do domu"
         ],
         "address": "ul. Przykładowa 12, Kraków",
-        "lat": 50.0815,
-        "lon": 19.8885,
-        "nearest_stop": "bronowice_male"
+        "lat": 50.0262,
+        "lon": 19.9115,
+        "nearest_stop": "ruczaj"
       },
       {
         "label": "praca",
@@ -62,13 +62,13 @@
         "date": "2026-10-01T08:12:00+02:00",
         "ticket_id": "kmk_15min_n",
         "price_pln": 4.0,
-        "vehicle": "RZ612"
+        "vehicle": "HY712"
       },
       {
         "date": "2026-09-30T17:40:00+02:00",
         "ticket_id": "kmk_30min_n",
         "price_pln": 6.0,
-        "vehicle": "BR785"
+        "vehicle": "DE624"
       }
     ]
   },

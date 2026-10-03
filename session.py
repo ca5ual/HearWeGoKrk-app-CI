@@ -42,6 +42,8 @@ class Session:
         """Apply a {"type": "context", ...} message from the phone. Missing (or null) keys are left unchanged."""
         if isinstance(msg.get("lat"), (int, float)) and isinstance(msg.get("lon"), (int, float)):
             self.lat, self.lon = float(msg["lat"]), float(msg["lon"])
+        if msg.get("gps") is False:  # GPS switched off on the phone -> forget the fix, fall back to the venue
+            self.lat = self.lon = None
         if "headphones" in msg:
             self.headphones = bool(msg["headphones"])
         if msg.get("lang") in ("pl", "en"):

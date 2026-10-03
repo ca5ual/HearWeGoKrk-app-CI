@@ -11,6 +11,7 @@ All of them go through Conversation.speak(), which serialises sending with a loc
 import asyncio
 import base64
 import time
+import traceback
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -20,6 +21,15 @@ import tools
 import wallet
 from mock import mock_realtime as rt
 from session import Session
+
+# Rough speaking rate of the phone / ElevenLabs voice. The silence window must not run while the
+# question is still being read out, so it starts only after this estimate (or earlier, when the
+# phone reports "listening").
+TTS_CHARS_PER_S = 12
+
+
+def speech_seconds(text: str) -> float:
+    return len(text) / TTS_CHARS_PER_S + 2
 
 router = APIRouter()
 TRIP_POLL_S = 10  # how often the trip monitor checks the vehicle position
@@ -57,7 +67,6 @@ class Conversation:
             if o.pending:
                 await self.send("pending_confirmation", id=o.pending["pending_action_id"],
                                 timeout_s=o.pending["timeout_s"], data=o.pending)
-                self._restart_confirmation_timer()
             if o.name == "confirm_pending_action" and o.result.get("status") == "purchased":
                 await self.send("haptic", pattern="confirm")
             if o.name == "match_boarded_vehicle" and o.result.get("matched"):
@@ -71,8 +80,31 @@ class Conversation:
         s.new_turn()
         await self.send("transcript", text=text)
         await self.send("state", value="thinking")
+        before = s.pending.id if s.pending else None
+        self._cancel_confirmation_timer()  # no "didn't hear you" while we work on the answer
         reply = await agent.respond(s, text)
+        if s is not self.session:
+            # POST /demo/reset (Tryb demo) replaced the session while this turn was running:
+            # its answer belongs to the old session, don't speak it or touch the new one.
+            await self.send("state", value="idle")
+            return
         await self.emit_outcomes(reply.outcomes)
+        new = next((o.pending for o in reply.outcomes if o.pending), None)
+        if new and s.pending is not None and s.pending.id == new["pending_action_id"]:
+            # Speak only the confirmation (ticket, price, vehicle, "Potwierdzasz?"): a long LLM
+            # answer would eat the time the user has to say "tak".
+            reply.text = new["confirmation_text"]
+            grace = speech_seconds(reply.text)
+            s.pending.created_at = time.time() + grace  # hard expiry counts from after the question
+            self._restart_confirmation_timer(grace)
+        # A spoken "nie" / "stop" cancelled the purchase: close the confirmation modal on the phone.
+        bought = any(o.name == "confirm_pending_action" and o.result.get("status") == "purchased"
+                     for o in reply.outcomes)
+        if before and (s.pending is None or s.pending.id != before) and not bought:
+            await self.send("pending_cancelled", id=before)
+        elif before and s.pending is not None and s.pending.id == before:
+            # Unclear answer: a fresh window for the next one, after this reply is read out.
+            self._restart_confirmation_timer(speech_seconds(reply.text))
         await self.speak(reply.text)
 
     # --- confirmation timeout ("cisza nie jest zgodą") ------------------
@@ -81,9 +113,12 @@ class Conversation:
             self.session.timer_task.cancel()
         self.session.timer_task = None
 
-    def _restart_confirmation_timer(self) -> None:
+    def _restart_confirmation_timer(self, grace_s: float = 0) -> None:
+        """grace_s: time the phone still needs to read the question out before silence counts."""
         self._cancel_confirmation_timer()
-        self.session.timer_task = asyncio.create_task(self._confirmation_timer(self.session.pending.id))
+        if self.session.pending is None:
+            return  # nothing to confirm (e.g. cancelled or reset in the meantime)
+        self.session.timer_task = asyncio.create_task(self._confirmation_timer(self.session.pending.id, grace_s))
 
     def extend_pending(self, pending_id: str | None) -> bool:
         """Give the user a fresh confirmation window. Silence still never counts as consent."""
@@ -95,17 +130,22 @@ class Conversation:
         self._restart_confirmation_timer()
         return True
 
-    async def _confirmation_timer(self, pending_id: str) -> None:
+    async def _confirmation_timer(self, pending_id: str, grace_s: float = 0) -> None:
         s = self.session
         tpl = wallet.templates()
         try:
-            for attempt in range(2):  # ask once more, then cancel
-                await asyncio.sleep(s.pending.timeout_s if s.pending else 0)
+            # Ask once more, then cancel. Restarts ("listening") keep the retry count.
+            for attempt in range(s.pending.retries if s.pending else 0, 2):
+                await asyncio.sleep((s.pending.timeout_s if s.pending else 0) + grace_s)
+                grace_s = 0
                 if s.pending is None or s.pending.id != pending_id:
                     return  # answered in the meantime
                 if attempt == 0:
                     s.pending.retries += 1
-                    await self.speak(tpl[f"silence_retry_{s.lang}"], haptic="warning")
+                    retry = tpl[f"silence_retry_{s.lang}"]
+                    s.pending.created_at = time.time() + speech_seconds(retry)
+                    await self.speak(retry, haptic="warning")
+                    grace_s = speech_seconds(retry)
                 else:
                     wallet.cancel(s)
                     s.log_tool("auto_cancel_on_silence", {}, {"status": "cancelled"})
@@ -176,6 +216,11 @@ class Conversation:
             await self.handle_utterance("stop")
         elif kind == "extend_pending":  # "more time" on the confirmation modal (WCAG 2.2.1)
             self.extend_pending(msg.get("id"))
+        elif kind == "listening":  # the phone finished reading the question and opened the mic
+            p = self.session.pending
+            if p is not None and p.id == msg.get("id"):
+                p.created_at = time.time()  # the answer window (and hard expiry) counts from now
+                self._restart_confirmation_timer()
         else:
             await self.send("error", message=f"unknown message type: {kind}")
 
@@ -199,6 +244,7 @@ async def voice(ws: WebSocket):
                 raise
             except Exception as e:  # one bad message must not kill the connection
                 print(f"[ws] bad message: {e!r}")
+                traceback.print_exc()  # where it happened, in the uvicorn terminal
                 await conv.send("error", message=f"{type(e).__name__}: {e}")
                 await conv.send("state", value="idle")
     except WebSocketDisconnect:
