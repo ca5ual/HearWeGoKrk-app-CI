@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import agent
+import speech
 import tools
 import voice_ws
 import wallet
@@ -54,7 +55,8 @@ class GpsReq(BaseModel):
 # --- basics --------------------------------------------------------------
 @app.get("/health")
 def health():
-    return {"ok": True, "sim_minute": round(rt.now_min(), 1), "llm": agent.USE_LLM, "demo_gps": DEMO_GPS}
+    return {"ok": True, "sim_minute": round(rt.now_min(), 1), "llm": agent.USE_LLM,
+            "tts": speech.tts_configured(), "demo_gps": DEMO_GPS}
 
 
 @app.get("/stops")

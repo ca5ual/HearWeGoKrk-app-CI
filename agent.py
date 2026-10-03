@@ -10,13 +10,15 @@ If the LLM call raises (no WiFi on stage, rate limit...), we automatically fall 
 to the rule-based brain below, which handles the whole demo script on its own.
 """
 
+import os
 import re
 from dataclasses import dataclass, field
 
 import tools
 import wallet
 
-USE_LLM = False  # Person A: flip to True once llm_respond works
+# AGENT=claude -> llm_agent.py (Claude tool calling). Unset -> rule-based brain only.
+USE_LLM = os.environ.get("AGENT", "").lower() == "claude"
 
 
 @dataclass
@@ -35,8 +37,8 @@ async def respond(session, text: str) -> AgentReply:
 
 
 async def llm_respond(session, text: str) -> AgentReply:
-    """Person A: implement the LLM tool-calling loop here."""
-    raise NotImplementedError
+    import llm_agent  # imported lazily: the rule brain must work without the anthropic package
+    return await llm_agent.respond(session, text)
 
 
 # =========================================================================
