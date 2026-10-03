@@ -32,6 +32,7 @@ class Session:
     turn: int = 0                        # incremented on every user utterance
     current_vehicle: str | None = None   # side number of the vehicle the user is in
     target_stop_name: str | None = None  # where the user wants to get off (for announcements)
+    plan: dict | None = None             # {"legs", "start_min"} up to the last ride (ticket length)
     pending: Any = None                  # wallet.PendingAction or None
     flags: dict = field(default_factory=dict)        # small conversational flags (offers, etc.)
     history: list = field(default_factory=list)      # LLM message history (llm_agent.py)

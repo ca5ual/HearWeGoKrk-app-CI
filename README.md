@@ -84,7 +84,7 @@ With `reset_clock(12)` tram 12 **HG935** is on the road: that's the vehicle the 
 | `set_vehicle` | `side_number` (as spoken: "HG 935", "935") | vehicle + trip; sets the side number for the ticket |
 | `vehicle_status` | `side_number` | position, remaining stops with ETA |
 | `get_balance` | – | `balance_pln`, default card label |
-| `prepare_ticket` | `ticket_id, side_number` | `pending_action_id` + confirmation text (no money moves) |
+| `prepare_ticket` | `ticket_id?, side_number?, fare?` | `pending_action_id` + confirmation text (no money moves). Without `ticket_id` the backend picks the shortest ticket valid for the rest of the ride (`trip_min`, `covers_trip`) |
 | `confirm_pending_action` | `pending_action_id` | ticket |
 | `cancel_pending_action` | – | what was cancelled |
 

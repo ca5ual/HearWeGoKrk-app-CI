@@ -90,10 +90,11 @@ def test_s6_s7_board_and_buy():
     r = say("tak", sid=r["session_id"])          # accept the "buy a ticket?" offer
     assert "Potwierdzasz?" in r["reply_text"] and "HG935" in r["reply_text"]
     assert r["pending"]
+    price = r["tools"][-1]["result"]["ticket"]["price_pln"]
     before = wallet.get_balance(Session())["balance_pln"]
     r = say("tak", sid=r["session_id"])          # explicit yes in a NEW turn
     assert "Kupione" in r["reply_text"]
-    assert wallet.get_balance(Session())["balance_pln"] == round(before - 4.0, 2)
+    assert wallet.get_balance(Session())["balance_pln"] == round(before - price, 2)
 
 
 def test_s9_stop_cancels():
@@ -140,6 +141,98 @@ def test_side_number_forms():
     assert tools.execute(s, "set_vehicle", {"side_number": "999"}).result["error"] == "unknown_vehicle"
     prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": "hg 935"})
     assert prep.result["side_number"] == "HG935"
+
+
+# --- ticket length: valid for the whole ride ---------------------------------------
+@pytest.mark.parametrize("minutes, ticket_id", [
+    (None, "kmk_15min_n"),   # ride length unknown: shortest
+    (12, "kmk_15min_n"),     # 12 + 3 min margin = 15
+    (13, "kmk_30min_n"),
+    (34, "kmk_60min_n"),     # AGH from the venue
+    (58, "kmk_90min_n"),
+    (200, "kmk_90min_n"),    # nothing is long enough: the longest
+])
+def test_pick_ticket_covers_ride_plus_margin(minutes, ticket_id):
+    assert wallet.pick_ticket(minutes)["id"] == ticket_id
+
+
+def test_pick_ticket_reduced_fare():
+    assert wallet.pick_ticket(34, fare="reduced")["id"] == "kmk_60min_u"
+
+
+def _plan_agh() -> Session:
+    """AGH from the venue: walk 4, wait 2, bus 124 (DE624) for 28 min, walk 3."""
+    rt.reset_clock(0)
+    s = Session()
+    tools.execute(s, "plan_route", {"destination": "agh"})
+    return s
+
+
+def test_ticket_before_boarding_follows_the_plan():
+    """The bug: ~34 min until the bus reaches AGH, and the agent bought a 15-minute ticket."""
+    s = _plan_agh()
+    assert wallet.trip_minutes(s, None) == 34  # 4 + 2 + 28; the final walk needs no ticket
+    assert wallet.pick_ticket(34)["id"] == "kmk_60min_n"
+
+
+def test_ticket_on_the_planned_bus_uses_its_live_eta():
+    s = _plan_agh()
+    rt.reset_clock(7)  # DE624 has just left the venue
+    eta = next(x["eta_min"] for x in rt.vehicle_status("DE624")["remaining_stops"] if x["name"] == "AGH / UR")
+    assert wallet.trip_minutes(s, "DE624") == eta
+
+
+def test_ticket_on_a_later_bus_is_not_too_short():
+    """The user missed DE624 and took the next 124: the planned arrival time would leave ~4 min,
+    the live ETA of the bus they are on says ~23."""
+    s = _plan_agh()
+    rt.reset_clock(30)
+    eta = next(x["eta_min"] for x in rt.vehicle_status("DE625")["remaining_stops"] if x["name"] == "AGH / UR")
+    s.current_vehicle = "DE625"
+    prep = tools.execute(s, "prepare_ticket", {}).result
+    assert prep["trip_min"] == eta and prep["covers_trip"]
+    assert prep["ticket"]["valid_min"] >= eta + wallet.TICKET_MARGIN_MIN
+
+
+def test_ticket_covers_the_transfer():
+    """On the first vehicle of a route with a transfer: this ride (live ETA) + the planned legs after
+    it. Review finding: counting from the planned arrival time made this too short when the user
+    took a later tram than planned (here the plan is 12 min old)."""
+    rt.reset_clock(12)
+    eta = next(x["eta_min"] for x in rt.vehicle_status("HG935")["remaining_stops"] if x["name"] == "Rondo Grunwaldzkie")
+    s = Session(current_vehicle="HG935", plan={"start_min": 0, "legs": [
+        {"type": "ride", "line_number": "12", "to": "Rondo Grunwaldzkie", "wait_min": 0, "ride_min": 0},
+        {"type": "walk", "minutes": 3},
+        {"type": "ride", "line_number": "1", "to": "Salwator", "wait_min": 4, "ride_min": 25},
+    ]})
+    assert wallet.trip_minutes(s, "HG935") == eta + 3 + 4 + 25
+    prep = tools.execute(s, "prepare_ticket", {}).result
+    assert prep["ticket_id"] == "kmk_60min_n" and "60-minutowy" in prep["confirmation_text"]
+
+
+def test_ticket_on_a_vehicle_off_the_plan_covers_the_end_of_the_line():
+    """No destination, or a vehicle that isn't on the planned route."""
+    s = _plan_agh()
+    rt.reset_clock(12)
+    end_of_line = rt.vehicle_status("HG935")["remaining_stops"][-1]["eta_min"]
+    assert wallet.trip_minutes(s, "HG935") == end_of_line
+    assert wallet.trip_minutes(Session(), "HG935") == end_of_line
+
+
+def test_explicit_short_ticket_is_flagged():
+    s = _plan_agh()
+    rt.reset_clock(7)
+    prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": "DE624"}).result
+    assert prep["ticket_id"] == "kmk_15min_n" and prep["covers_trip"] is False
+
+
+def test_rule_agent_offers_the_ticket_it_will_buy():
+    rt.reset_clock(12)
+    r = say("Jestem w HG 935")
+    offered = wallet.pick_ticket(wallet.trip_minutes(Session(current_vehicle="HG935"), "HG935"))
+    assert offered["name_pl"] in r["reply_text"]
+    r = say("tak", sid=r["session_id"])
+    assert r["tools"][-1]["result"]["ticket_id"] == offered["id"]
 
 
 def test_mock_fleet_is_ttss():

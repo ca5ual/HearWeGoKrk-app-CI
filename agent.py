@@ -195,9 +195,9 @@ def rule_respond(session, text: str) -> AgentReply:
             session.flags["offer"] = "buy"
             return _remember(session, AgentReply(session.t(
                 f"Jesteś w pojeździe {v['side_number']}"
-                + (f", linia {r['line_number']}" if r["line_number"] else "") + ". Kupić bilet 15-minutowy?",
+                + (f", linia {r['line_number']}" if r["line_number"] else "") + ". ",
                 f"You're in vehicle {v['side_number']}"
-                + (f", line {r['line_number']}" if r["line_number"] else "") + ". Buy a 15-minute ticket?"), out))
+                + (f", line {r['line_number']}" if r["line_number"] else "") + ". ") + _offer_ticket(session), out))
     elif _BOARD.search(t) or (_BUY.search(t) and not session.current_vehicle):
         r = run("match_boarded_vehicle")
         if not r.get("matched"):
@@ -210,11 +210,11 @@ def rule_respond(session, text: str) -> AgentReply:
         if not _BUY.search(t):
             session.flags["offer"] = "buy"
             return _remember(session, AgentReply(session.t(
-                f"Jesteś w linii {r['line_number']}, pojazd {v['side_number']}. Kupić bilet 15-minutowy?",
-                f"You're on line {r['line_number']}, vehicle {v['side_number']}. Buy a 15-minute ticket?"), out))
+                f"Jesteś w linii {r['line_number']}, pojazd {v['side_number']}. ",
+                f"You're on line {r['line_number']}, vehicle {v['side_number']}. ") + _offer_ticket(session), out))
 
     if _BUY.search(t):
-        r = run("prepare_ticket", ticket_id="kmk_15min_n")
+        r = run("prepare_ticket")
         if "error" in r:
             return _remember(session, AgentReply(session.t("Nie mogę teraz przygotować biletu.",
                                                            "I can't prepare a ticket right now."), out))
@@ -237,6 +237,12 @@ def rule_respond(session, text: str) -> AgentReply:
     else:
         msg = _say_route(session, r)
     return _remember(session, AgentReply(msg, out))
+
+
+def _offer_ticket(session) -> str:
+    """'Kupić bilet 30-minutowy…?' with the ticket prepare_ticket would pick for this ride."""
+    t = wallet.pick_ticket(wallet.trip_minutes(session, session.current_vehicle))
+    return session.t(f"Kupić {t['name_pl']}?", f"Buy a {t['name_en']}?")
 
 
 def _remember(session, reply: AgentReply) -> AgentReply:

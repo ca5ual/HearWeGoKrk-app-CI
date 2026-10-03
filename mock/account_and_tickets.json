@@ -112,6 +112,46 @@
       "zones": "I+II+III",
       "category": "czasowe",
       "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_60min_u",
+      "name_pl": "bilet 60-minutowy ulgowy",
+      "name_en": "60-minute ticket, reduced fare",
+      "price_pln": 4.0,
+      "valid_min": 60,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_60min_n",
+      "name_pl": "bilet 60-minutowy normalny",
+      "name_en": "60-minute ticket, full fare",
+      "price_pln": 8.0,
+      "valid_min": 60,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_90min_u",
+      "name_pl": "bilet 90-minutowy ulgowy",
+      "name_en": "90-minute ticket, reduced fare",
+      "price_pln": 5.0,
+      "valid_min": 90,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_90min_n",
+      "name_pl": "bilet 90-minutowy normalny",
+      "name_en": "90-minute ticket, full fare",
+      "price_pln": 10.0,
+      "valid_min": 90,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
     }
   ],
   "confirmation_templates": {

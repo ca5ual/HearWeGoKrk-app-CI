@@ -48,9 +48,13 @@ def plan_route(session, destination: str, prefer_low_floor: bool | None = None) 
         prefer_low_floor = wallet.user()["accessibility_profile"]["prefers_low_floor"]
     res = provider.plan_route(destination, prefer_low_floor=prefer_low_floor)
     if res.get("status") == "ok":
-        rides = [leg for leg in res["best"]["legs"] if leg["type"] == "ride"]
-        if rides:  # remember where to get off, for the "wysiadasz za 2 przystanki" announcements
-            session.target_stop_name = rides[-1]["to"]
+        legs = res["best"]["legs"]
+        last = max((i for i, leg in enumerate(legs) if leg["type"] == "ride"), default=None)
+        # Where to get off (for the "wysiadasz za 2 przystanki" announcements) and the legs the
+        # ticket must cover (the walk after the last ride needs none). Walk-only: nothing to ride.
+        session.target_stop_name = legs[last]["to"] if last is not None else None
+        session.plan = ({"legs": legs[:last + 1], "start_min": provider.now_min()}
+                        if last is not None else None)
     return res
 
 
@@ -110,8 +114,9 @@ def get_balance(session) -> dict:
     return wallet.get_balance(session)
 
 
-def prepare_ticket(session, ticket_id: str, side_number: str | None = None) -> dict:
-    return wallet.prepare_ticket(session, ticket_id, side_number)
+def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
+                   fare: str = "full") -> dict:
+    return wallet.prepare_ticket(session, ticket_id, side_number, fare)
 
 
 def confirm_pending_action(session, pending_action_id: str | None = None) -> dict:
@@ -177,8 +182,12 @@ TOOLS: dict[str, Tool] = {
     "prepare_ticket": Tool(
         prepare_ticket,
         "Prepare (NOT buy) a ticket for the current vehicle. Say `confirmation_text` exactly and wait "
-        "for an explicit yes in the next user turn. Default ticket: 'kmk_15min_n'.",
-        _obj({"ticket_id": {"type": "string"}, "side_number": {"type": "string"}}, ["ticket_id"]),
+        "for an explicit yes in the next user turn. Omit ticket_id: the backend picks the shortest "
+        "ticket valid for the rest of the ride (trip_min). Pass ticket_id only when the user asks for "
+        "a specific ticket; if covers_trip is then false, warn that it ends before the ride does.",
+        _obj({"ticket_id": {"type": "string"}, "side_number": {"type": "string"},
+              "fare": {"type": "string", "enum": ["full", "reduced"],
+                       "description": "'reduced' only if the user says they have a discount (ulga)."}}),
         ui_component="ticket_confirm"),
     "confirm_pending_action": Tool(
         confirm_pending_action,

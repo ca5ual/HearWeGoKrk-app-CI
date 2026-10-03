@@ -14,12 +14,16 @@ Safety rules enforced HERE, not only in the prompt (an LLM can be talked into an
 
 import copy
 import json
+import math
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from mock import mock_realtime as rt
+
+# A ticket must still be valid this long after the ride is expected to end (delays on the way).
+TICKET_MARGIN_MIN = 3
 
 _SEED = json.loads((rt.DATA_DIR / "account_and_tickets.json").read_text(encoding="utf-8"))
 _state = copy.deepcopy(_SEED)  # mutable copy; reset() restores the seed for each demo run
@@ -90,6 +94,42 @@ def _active_tickets() -> list[dict]:
     return [t for t in _state["wallet"]["active_tickets"] if t["valid_until"] > now]
 
 
+# --- ticket length -------------------------------------------------------
+def _leg_min(leg: dict) -> int:
+    return leg["minutes"] if leg["type"] == "walk" else leg["wait_min"] + leg["ride_min"]
+
+
+def trip_minutes(session, side_number: str | None) -> int | None:
+    """Minutes from now until the user leaves their last vehicle, or None if unknown.
+
+    On a vehicle that rides a leg of the planned route: its live ETA to that leg's stop, plus the
+    planned legs after it (transfers). On any other vehicle: to the end of its line. Not on a
+    running vehicle: the planned route from when it was planned.
+    """
+    st = rt.vehicle_status(side_number) if side_number else None
+    legs = session.plan["legs"] if session.plan else []
+    if st:
+        etas = {s["name"]: s["eta_min"] for s in st["remaining_stops"]}
+        for i, leg in enumerate(legs):
+            if leg["type"] == "ride" and leg["line_number"] == st["line_number"] and leg["to"] in etas:
+                return etas[leg["to"]] + sum(_leg_min(x) for x in legs[i + 1:])
+        return st["remaining_stops"][-1]["eta_min"] if st["remaining_stops"] else None
+    if legs:
+        end = session.plan["start_min"] + sum(_leg_min(x) for x in legs)
+        return max(0, math.ceil(end - rt.now_min()))
+    return None
+
+
+def pick_ticket(minutes: int | None, fare: str = "full") -> dict:
+    """The shortest ticket of this fare still valid TICKET_MARGIN_MIN after the ride ends
+    (the longest one if none is long enough, the shortest one if the ride length is unknown)."""
+    suffix = "_u" if fare == "reduced" else "_n"
+    options = sorted((t for t in catalog() if t["id"].endswith(suffix)), key=lambda t: t["valid_min"])
+    if minutes is None:
+        return options[0]
+    return next((t for t in options if t["valid_min"] >= minutes + TICKET_MARGIN_MIN), options[-1])
+
+
 # --- tool implementations ------------------------------------------------
 def get_balance(session) -> dict:
     bal = _state["wallet"]["balance_pln"]
@@ -102,19 +142,25 @@ def get_balance(session) -> dict:
     }
 
 
-def prepare_ticket(session, ticket_id: str, side_number: str | None = None) -> dict:
-    ticket = next((t for t in catalog() if t["id"] == ticket_id), None)
-    if ticket is None:
-        raise WalletError("unknown_ticket", f"No ticket '{ticket_id}'. Call list_tickets.")
+def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
+                   fare: str = "full") -> dict:
+    """ticket_id None: pick the ticket that lasts the whole ride (pick_ticket)."""
     side_number = side_number or session.current_vehicle
-    if ticket["requires_vehicle_side_number"] and not side_number:
-        raise WalletError("missing_side_number",
-                          "Vehicle unknown. Call match_boarded_vehicle first, or ask the user to say when they board.")
     if side_number and side_number not in rt.VEHICLES:
         veh = rt.find_vehicle(side_number)  # "HG 935", "935"...
         if veh is None:
             raise WalletError("unknown_vehicle", f"Vehicle '{side_number}' not found.")
         side_number = veh["side_number"]
+    minutes = trip_minutes(session, side_number)
+    if ticket_id is None:
+        ticket = pick_ticket(minutes, fare)
+    else:
+        ticket = next((t for t in catalog() if t["id"] == ticket_id), None)
+        if ticket is None:
+            raise WalletError("unknown_ticket", f"No ticket '{ticket_id}'. Call list_tickets.")
+    if ticket["requires_vehicle_side_number"] and not side_number:
+        raise WalletError("missing_side_number",
+                          "Vehicle unknown. Call match_boarded_vehicle first, or ask the user to say when they board.")
 
     price = ticket["price_pln"]
     # Pay from the in-app balance when possible, otherwise from the default card.
@@ -143,10 +189,13 @@ def prepare_ticket(session, ticket_id: str, side_number: str | None = None) -> d
         "pending_action_id": pa.id,
         "confirmation_text": text,   # the agent should say THIS, with all parameters
         "timeout_s": pa.timeout_s,
+        "ticket_id": ticket["id"],
         "ticket": ticket,
         "side_number": side_number,
         "payment_source": source,
         "show_price": private,       # the frontend hides the price behind "Pokaż kwotę" if False
+        "trip_min": minutes,         # ride left, None = unknown
+        "covers_trip": minutes is None or ticket["valid_min"] >= minutes,
     }
 
 

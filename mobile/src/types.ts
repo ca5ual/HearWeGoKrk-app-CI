@@ -91,6 +91,9 @@ export type PreparedTicket = {
   side_number: string | null;
   payment_source: "balance" | "card";
   show_price: boolean;
+  ticket_id: string;
+  trip_min: number | null;
+  covers_trip: boolean;
 };
 
 export type ActiveTicket = {
