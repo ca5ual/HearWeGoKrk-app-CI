@@ -56,7 +56,8 @@ class GpsReq(BaseModel):
 @app.get("/health")
 def health():
     return {"ok": True, "sim_minute": round(rt.now_min(), 1), "llm": agent.USE_LLM,
-            "tts": speech.tts_configured(), "demo_gps": DEMO_GPS}
+            "stt": speech.stt_configured(), "tts": speech.tts_configured(),
+            "demo_gps": DEMO_GPS}
 
 
 @app.get("/stops")

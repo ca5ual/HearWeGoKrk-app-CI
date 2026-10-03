@@ -264,3 +264,72 @@ def test_empty_utterance_skips_claude():
     llm_agent._client = fake
     r = run(Session(), "   ")
     assert "Nie usłyszałem" in r.text and fake.requests == []
+
+
+# --- ElevenLabs STT ---------------------------------------------------------------------
+def _stt_handler(seen, reply_text="Jak dojadę na Rynek?", status=200):
+    def handler(req: httpx.Request):
+        body = req.content.decode("latin-1")
+        seen.append({"url": str(req.url), "key": req.headers["xi-api-key"], "body": body})
+        if status != 200:
+            return httpx.Response(status, json={"detail": "nope"})
+        return httpx.Response(200, json={"text": f" {reply_text} ", "language_code": "pol"})
+    return handler
+
+
+def _field(body, name):
+    """Value of a multipart form field."""
+    part = body.split(f'name="{name}"', 1)[1]
+    return part.split("\r\n\r\n", 1)[1].split("\r\n--", 1)[0]
+
+
+def test_stt_android_m4a(monkeypatch):
+    seen = []
+    _mock_elevenlabs(monkeypatch, _stt_handler(seen))
+    m4a = b"\x00\x00\x00\x18ftypmp42" + b"x" * 5000
+    assert asyncio.run(speech.transcribe(m4a, "pl")) == "Jak dojadę na Rynek?"
+    b = seen[0]["body"]
+    assert seen[0]["url"] == "https://api.elevenlabs.io/v1/speech-to-text" and seen[0]["key"] == "test-key"
+    assert _field(b, "model_id") == "scribe_v2" and _field(b, "file_format") == "other"
+    assert _field(b, "language_code") == "pl" and 'filename="speech.m4a"' in b
+
+
+def test_stt_ios_raw_pcm(monkeypatch):
+    seen = []
+    _mock_elevenlabs(monkeypatch, _stt_handler(seen, "How do I get to AGH?"))
+    assert asyncio.run(speech.transcribe(b"\x01\x00" * 8000, "en")) == "How do I get to AGH?"
+    assert _field(seen[0]["body"], "file_format") == "pcm_s16le_16"
+    assert _field(seen[0]["body"], "language_code") == "en"
+
+
+def test_stt_too_short_error_or_unconfigured_returns_empty(monkeypatch):
+    seen = []
+    _mock_elevenlabs(monkeypatch, _stt_handler(seen, status=401))
+    assert asyncio.run(speech.transcribe(b"\x00" * 100, "pl")) == "" and seen == []  # < 100 ms: no request
+    assert asyncio.run(speech.transcribe(b"\x00" * 9000, "pl")) == ""                 # 401 -> ""
+    monkeypatch.delenv("ELEVENLABS_API_KEY")
+    assert asyncio.run(speech.transcribe(b"\x00" * 9000, "pl")) == ""
+
+
+def test_websocket_voice_turn_end_to_end(monkeypatch):
+    """audio_chunk + end_of_speech -> STT -> agent -> reply + TTS audio."""
+    monkeypatch.setattr(agent, "USE_LLM", False)
+
+    def handler(req: httpx.Request):
+        if req.url.path == "/v1/speech-to-text":
+            return httpx.Response(200, json={"text": "Jak dojadę na Rynek?"})
+        return httpx.Response(200, content=b"mp3" * 100)
+
+    _mock_elevenlabs(monkeypatch, handler)
+    import base64
+    with client.websocket_connect("/ws/voice") as ws:
+        ws.receive_json(), ws.receive_json()
+        audio = b"\x00\x00\x00\x18ftypmp42" + b"a" * 4000
+        ws.send_json({"type": "audio_chunk", "data": base64.b64encode(audio).decode()})
+        ws.send_json({"type": "end_of_speech"})
+        msgs = []
+        while not (len(msgs) > 2 and msgs[-1] == {"type": "state", "value": "idle"}):
+            msgs.append(ws.receive_json())
+    assert {"type": "transcript", "text": "Jak dojadę na Rynek?"} in msgs
+    assert any(m["type"] == "reply_text" and "Na miejscu o" in m["text"] for m in msgs)
+    assert any(m["type"] == "audio_chunk" for m in msgs)
