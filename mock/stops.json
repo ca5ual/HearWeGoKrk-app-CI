@@ -224,11 +224,12 @@
    "lat": 50.071103,
    "lon": 19.982871,
    "modes": [
-    "tram"
+    "tram",
+    "bus"
    ],
-   "step_free_access": null,
-   "tactile_paving": null,
-   "voice_departure_board": null
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
   },
   {
    "id": "bialucha",
@@ -699,6 +700,99 @@
    "step_free_access": null,
    "tactile_paving": null,
    "voice_departure_board": null
+  },
+  {
+   "id": "tauron_arena_krakow",
+   "name": "TAURON Arena Kraków",
+   "ttss_stop_point": "011515",
+   "lat": 50.06802,
+   "lon": 19.98879,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "brodowicza",
+   "name": "Brodowicza",
+   "ttss_stop_point": "013745",
+   "lat": 50.0694,
+   "lon": 19.9615,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "grochowska",
+   "name": "Grochowska",
+   "ttss_stop_point": "013746",
+   "lat": 50.0712,
+   "lon": 19.9631,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "narzymskiego",
+   "name": "Narzymskiego",
+   "ttss_stop_point": "013747",
+   "lat": 50.0682,
+   "lon": 19.9608,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "muzeum_lotnictwa",
+   "name": "Muzeum Lotnictwa",
+   "ttss_stop_point": "013748",
+   "lat": 50.0782,
+   "lon": 19.9912,
+   "modes": [
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "os_kolorowe",
+   "name": "Os. Kolorowe",
+   "ttss_stop_point": "013749",
+   "lat": 50.0725,
+   "lon": 20.021,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": false
+  },
+  {
+   "id": "rondo_czyzynskie",
+   "name": "Rondo Czyżyńskie",
+   "ttss_stop_point": "013750",
+   "lat": 50.0699,
+   "lon": 20.0152,
+   "modes": [
+    "tram",
+    "bus"
+   ],
+   "step_free_access": true,
+   "tactile_paving": true,
+   "voice_departure_board": true
   }
  ],
  "places": [

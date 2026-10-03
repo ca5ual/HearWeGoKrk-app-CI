@@ -285,7 +285,9 @@
     "DE624",
     "DE625",
     "DE627",
-    "DE629"
+    "DE629",
+    "DE630",
+    "DE631"
    ],
    "delay_pattern_min": [
     0,
@@ -297,12 +299,136 @@
      "t": 0
     },
     {
+     "stop": "tauron_arena_krakow",
+     "t": 2
+    },
+    {
+     "stop": "tauron_wieczysta",
+     "t": 4
+    },
+    {
      "stop": "ugorek",
-     "t": 5
+     "t": 6
     },
     {
      "stop": "spadochroniarzy",
-     "t": 6
+     "t": 7
+    },
+    {
+     "stop": "akacjowa",
+     "t": 9
+    },
+    {
+     "stop": "rondo_mlynskie",
+     "t": 11
+    },
+    {
+     "stop": "pilotow",
+     "t": 13
+    },
+    {
+     "stop": "lukasiewicza",
+     "t": 15
+    },
+    {
+     "stop": "brodowicza",
+     "t": 16
+    },
+    {
+     "stop": "narzymskiego",
+     "t": 17
+    },
+    {
+     "stop": "cmentarz_rakowicki",
+     "t": 18
+    },
+    {
+     "stop": "rondo_mogilskie",
+     "t": 20
+    },
+    {
+     "stop": "uniwersytet_ekonomiczny",
+     "t": 21
+    },
+    {
+     "stop": "dworzec_glowny_wschod",
+     "t": 23
+    },
+    {
+     "stop": "politechnika",
+     "t": 25
+    },
+    {
+     "stop": "nowy_kleparz",
+     "t": 28
+    },
+    {
+     "stop": "radio_krakow",
+     "t": 29
+    },
+    {
+     "stop": "plac_inwalidow",
+     "t": 31
+    },
+    {
+     "stop": "agh_ur",
+     "t": 33
+    },
+    {
+     "stop": "muzeum_narodowe",
+     "t": 35
+    },
+    {
+     "stop": "jubilat",
+     "t": 36
+    },
+    {
+     "stop": "konopnickiej",
+     "t": 37
+    },
+    {
+     "stop": "rondo_grunwaldzkie",
+     "t": 39
+    },
+    {
+     "stop": "os_podwawelskie",
+     "t": 40
+    }
+   ]
+  },
+  {
+   "id": "B424",
+   "number": "424",
+   "mode": "bus",
+   "headsign": "Os. Podwawelskie",
+   "first_departure_offset_min": 13,
+   "headway_min": 15,
+   "vehicle_rotation": [
+    "DE630",
+    "DE631",
+    "BH085",
+    "DN001"
+   ],
+   "delay_pattern_min": [
+    1,
+    0
+   ],
+   "stops": [
+    {
+     "stop": "tauron_arena_krakow",
+     "t": 0
+    },
+    {
+     "stop": "tauron_wieczysta",
+     "t": 2
+    },
+    {
+     "stop": "ugorek",
+     "t": 4
+    },
+    {
+     "stop": "spadochroniarzy",
+     "t": 5
     },
     {
      "stop": "akacjowa",
@@ -314,67 +440,75 @@
     },
     {
      "stop": "pilotow",
-     "t": 10
-    },
-    {
-     "stop": "lukasiewicza",
      "t": 11
     },
     {
-     "stop": "cmentarz_rakowicki",
+     "stop": "lukasiewicza",
      "t": 13
     },
     {
-     "stop": "rondo_mogilskie",
+     "stop": "brodowicza",
+     "t": 14
+    },
+    {
+     "stop": "narzymskiego",
      "t": 15
     },
     {
-     "stop": "uniwersytet_ekonomiczny",
+     "stop": "cmentarz_rakowicki",
      "t": 16
     },
     {
-     "stop": "dworzec_glowny_wschod",
+     "stop": "rondo_mogilskie",
      "t": 18
     },
     {
-     "stop": "politechnika",
-     "t": 20
+     "stop": "uniwersytet_ekonomiczny",
+     "t": 19
     },
     {
-     "stop": "nowy_kleparz",
+     "stop": "dworzec_glowny_wschod",
+     "t": 21
+    },
+    {
+     "stop": "politechnika",
      "t": 23
     },
     {
-     "stop": "radio_krakow",
-     "t": 24
-    },
-    {
-     "stop": "plac_inwalidow",
+     "stop": "nowy_kleparz",
      "t": 26
     },
     {
+     "stop": "radio_krakow",
+     "t": 27
+    },
+    {
+     "stop": "plac_inwalidow",
+     "t": 29
+    },
+    {
      "stop": "agh_ur",
-     "t": 28
-    },
-    {
-     "stop": "muzeum_narodowe",
-     "t": 30
-    },
-    {
-     "stop": "jubilat",
      "t": 31
     },
     {
-     "stop": "konopnickiej",
-     "t": 32
+     "stop": "muzeum_narodowe",
+     "t": 33
     },
     {
-     "stop": "rondo_grunwaldzkie",
+     "stop": "jubilat",
      "t": 34
     },
     {
-     "stop": "os_podwawelskie",
+     "stop": "konopnickiej",
      "t": 35
+    },
+    {
+     "stop": "rondo_grunwaldzkie",
+     "t": 37
+    },
+    {
+     "stop": "os_podwawelskie",
+     "t": 38
     }
    ]
   }
@@ -642,6 +776,54 @@
    "air_conditioning": true,
    "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
    "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DE630",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DE631",
+   "mode": "bus",
+   "model": "Solaris Urbino 12 IV Electric",
+   "ttss_type": "Solaris Urbino 12 IV Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "BH085",
+   "mode": "bus",
+   "model": "Solaris Urbino 18 Hybrid",
+   "ttss_type": "Solaris Urbino 18 Hybrid",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus przegubowy niskopodłogowy, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Articulated low-floor bus, ramp at the second door.",
+   "source": "ttss"
+  },
+  {
+   "side_number": "DN001",
+   "mode": "bus",
+   "model": "Solaris Urbino 18 Electric",
+   "ttss_type": "Solaris Urbino 18 Electric",
+   "low_floor": "full",
+   "audio_stop_announcements": true,
+   "air_conditioning": true,
+   "boarding_hint_pl": "Autobus przegubowy elektryczny, rampa przy drugich drzwiach.",
+   "boarding_hint_en": "Electric articulated bus, ramp at the second door.",
    "source": "ttss"
   }
  ]
