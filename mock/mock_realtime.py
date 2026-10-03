@@ -30,15 +30,18 @@ def _load(name: str) -> dict:
 
 
 # --- Static data, loaded once at import ---------------------------------
-_stops_file = _load("stops.json")
-STOPS = {s["id"]: s for s in _stops_file["stops"]}
-PLACES = {p["id"]: p for p in _stops_file["places"]}
+def reload_data() -> None:
+    global _stops_file, STOPS, PLACES, _fleet, LINES, VEHICLES, ROUTES
+    _stops_file = _load("stops.json")
+    STOPS = {s["id"]: s for s in _stops_file["stops"]}
+    PLACES = {p["id"]: p for p in _stops_file.get("places", [])}
+    _fleet = _load("lines_and_vehicles.json")
+    LINES = {line["id"]: line for line in _fleet["lines"]}
+    VEHICLES = {v["side_number"]: v for v in _fleet["vehicles"]}
+    ROUTES = _load("routes.json")
 
-_fleet = _load("lines_and_vehicles.json")
-LINES = {line["id"]: line for line in _fleet["lines"]}
-VEHICLES = {v["side_number"]: v for v in _fleet["vehicles"]}
 
-ROUTES = _load("routes.json")
+reload_data()
 
 # Simulation epoch (unix seconds). Moved by reset_clock().
 SIM_START = time.time()
@@ -52,6 +55,7 @@ DATA_SOURCE = "simulated_live"
 def reset_clock(offset_min: float = 0.0) -> None:
     """Restart the simulation. offset_min > 0 jumps forward in time."""
     global SIM_START
+    reload_data()
     SIM_START = time.time() - offset_min * 60
 
 
@@ -303,6 +307,11 @@ def plan_route(destination_text: str, prefer_low_floor: bool = True) -> dict:
     if not plans:
         return {"status": "no_route", "destination": dest["name"]}
     plans.sort(key=lambda p: p["total_min"])
+    q = destination_text.lower()
+    if any(w in q for w in ("bus", "autobus", "autobusem", "124", "424")):
+        plans.sort(key=lambda p: 0 if any(l.get("mode") == "bus" or str(l.get("line_number")) in ("124", "424") for l in p["legs"]) else 1)
+    elif any(w in q for w in ("tram", "tramwaj", "tramwajem", "14", "1", "12")):
+        plans.sort(key=lambda p: 0 if any(l.get("mode") == "tram" for l in p["legs"]) else 1)
     return {"status": "ok", "destination": dest["name"], "best": plans[0],
             "alternatives": plans[1:], "data_source": DATA_SOURCE}
 

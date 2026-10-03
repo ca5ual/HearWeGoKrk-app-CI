@@ -340,3 +340,50 @@ def test_demo_reset_during_a_turn_does_not_crash(monkeypatch):
         conv.close()
 
     asyncio.run(run())
+
+
+def test_bus_124_to_rondo_mogilskie_lasts_20_minutes():
+    """Bus 124 from TAURON Arena to Rondo Mogilskie lasts exactly 20 minutes."""
+    rt.reset_clock(0)
+    res = rt.plan_route("rondo mogilskie")
+    assert res["status"] == "ok"
+    # Find the B124 plan (either in best or alternatives)
+    all_plans = [res["best"]] + res["alternatives"]
+    b124_plans = [
+        p for p in all_plans
+        if any(leg.get("line_number") == "124" and leg.get("from") == "TAURON Arena Kraków Al. Pokoju" for leg in p["legs"])
+    ]
+    assert len(b124_plans) >= 1
+    plan = b124_plans[0]
+    bus_leg = next(leg for leg in plan["legs"] if leg.get("line_number") == "124")
+    assert bus_leg["mode"] == "bus"
+    assert bus_leg["to"] == "Rondo Mogilskie"
+    assert bus_leg["ride_min"] == 20
+    assert bus_leg["vehicle"]["low_floor"] == "full"
+
+
+def test_route_autobusem_na_rondo_mogilskie():
+    """Asking explicitly for bus to Rondo Mogilskie prioritizes bus 124."""
+    rt.reset_clock(0)
+    r = say("Jak dojadę autobusem na Rondo Mogilskie?")
+    assert "Autobus 124" in r["reply_text"]
+    assert "TAURON Arena" in r["reply_text"]
+    assert "Na miejscu o" in r["reply_text"]
+    assert r["ui"][0]["component"] == "route_results"
+
+
+def test_bus_stops_mock_data():
+    """New bus stops are properly exposed in the /stops endpoint."""
+    resp = client.get("/stops")
+    assert resp.status_code == 200
+    stops_by_id = {s["id"]: s for s in resp.json()}
+    assert "tauron_arena_krakow" in stops_by_id
+    assert "brodowicza" in stops_by_id
+    assert "grochowska" in stops_by_id
+    assert "narzymskiego" in stops_by_id
+    assert "muzeum_lotnictwa" in stops_by_id
+    assert "rondo_czyzynskie" in stops_by_id
+    assert "bus" in stops_by_id["tauron_arena_krakow"]["modes"]
+    assert stops_by_id["tauron_arena_krakow"]["step_free_access"] is True
+    assert "bus" in stops_by_id["tauron_wieczysta"]["modes"]
+

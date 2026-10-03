@@ -56,8 +56,8 @@ _DEPART = re.compile(r"(kiedy|nast[eę]pn|odjazd|next|when)", re.I)
 _REPEAT = re.compile(r"(powt[oó]rz|repeat|say again)", re.I)
 
 # Spoken line names -> line ids. Order matters: longer phrases first.
-_LINE_WORDS = [("czternast", "T14"), ("dwunast", "T12"), ("jedynk", "T1"), (r"\b124\b", "B124"),
-               (r"\b14\b", "T14"), (r"\b12\b", "T12"), (r"\b1\b", "T1")]
+_LINE_WORDS = [("sto dwadzie[sś]cia cztery", "B124"), ("czternast", "T14"), ("dwunast", "T12"), ("jedynk", "T1"),
+               (r"\b124\b", "B124"), (r"\b424\b", "B424"), (r"\b14\b", "T14"), (r"\b12\b", "T12"), (r"\b1\b", "T1")]
 
 _MODE_PL = {"tram": "tramwaj", "bus": "autobus"}
 _MODE_EN = {"tram": "tram", "bus": "bus"}
