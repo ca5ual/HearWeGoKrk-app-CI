@@ -289,20 +289,42 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     else notConnected();
   }, [send, waitForReply, notConnected]);
 
-  const startListening = useCallback(async () => {
-    const perm = await requestRecordingPermissionsAsync();
-    if (!perm.granted) return;
-    beginTurn();
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    await recorder.prepareToRecordAsync();
-    recorder.record();
-    setState("listening");
+  // Recorder lifecycle. On Android the native recorder stays "prepared" until stop(), and
+  // preparing it twice throws — so every transition goes through this one ref.
+  const mic = useRef<"idle" | "starting" | "recording" | "stopping">("idle");
+  const stopRequested = useRef(false); // button released while the recorder was still starting
+
+  const micFailed = useCallback((what: string, e: unknown) => {
+    console.warn(`[audio] ${what}:`, e);
+    mic.current = "idle";
+    setState("idle");
+    setNotice("Nie udało się nagrać. Spróbuj jeszcze raz.");
+  }, []);
+
+  /** Stop the native recorder if it is prepared or recording (ignores "not recording" errors). */
+  const resetRecorder = useCallback(async () => {
+    const st = recorder.getStatus();
+    if (st.isRecording || st.canRecord) {
+      try {
+        await recorder.stop();
+      } catch {}
+    }
   }, [recorder]);
 
   const stopListening = useCallback(async () => {
-    if (!recorder.isRecording) return;
-    await recorder.stop();
-    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+    if (mic.current === "starting") {
+      stopRequested.current = true; // startListening finishes, then calls us again
+      return;
+    }
+    if (mic.current !== "recording") return;
+    mic.current = "stopping";
+    try {
+      await recorder.stop();
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+    } catch (e) {
+      return micFailed("stop failed", e);
+    }
+    mic.current = "idle";
     setState("thinking");
     const uri = recorder.uri;
     if (!uri) return setState("idle");
@@ -317,7 +339,32 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     }
     if (send({ type: "end_of_speech" })) waitForReply();
     else notConnected();
-  }, [recorder, send, waitForReply, notConnected]);
+  }, [recorder, send, waitForReply, notConnected, micFailed]);
+
+  const startListening = useCallback(async () => {
+    if (mic.current !== "idle") return; // a second press while starting/stopping: ignore
+    mic.current = "starting";
+    stopRequested.current = false;
+    try {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!perm.granted) {
+        mic.current = "idle";
+        setNotice("Potrzebuję dostępu do mikrofonu (Ustawienia telefonu → Aplikacje → Expo Go).");
+        return;
+      }
+      beginTurn();
+      await resetRecorder(); // left prepared by an earlier failure? start clean
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+    } catch (e) {
+      await resetRecorder();
+      return micFailed("could not start recording", e);
+    }
+    mic.current = "recording";
+    setState("listening");
+    if (stopRequested.current) stopListening(); // released during the permission dialog / prepare
+  }, [recorder, resetRecorder, micFailed, stopListening]);
 
   const stop = useCallback(() => {
     beginTurn();
