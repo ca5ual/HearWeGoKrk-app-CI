@@ -307,10 +307,12 @@ def plan_route(destination_text: str, prefer_low_floor: bool = True) -> dict:
     if not plans:
         return {"status": "no_route", "destination": dest["name"]}
     plans.sort(key=lambda p: p["total_min"])
+    # "autobusem na Rondo Mogilskie": the asked-for mode first (the sort is stable, so fastest within it).
+    # Whole words only: a "1" inside a destination name must not mean tram 1.
     q = destination_text.lower()
-    if any(w in q for w in ("bus", "autobus", "autobusem", "124", "424")):
-        plans.sort(key=lambda p: 0 if any(l.get("mode") == "bus" or str(l.get("line_number")) in ("124", "424") for l in p["legs"]) else 1)
-    elif any(w in q for w in ("tram", "tramwaj", "tramwajem", "14", "1", "12")):
+    if re.search(r"autobus|\bbus\b|\b(124|424)\b", q):
+        plans.sort(key=lambda p: 0 if any(l.get("mode") == "bus" for l in p["legs"]) else 1)
+    elif re.search(r"tramwaj|\btram\b|\b(1|12|14)\b", q):
         plans.sort(key=lambda p: 0 if any(l.get("mode") == "tram" for l in p["legs"]) else 1)
     return {"status": "ok", "destination": dest["name"], "best": plans[0],
             "alternatives": plans[1:], "data_source": DATA_SOURCE}

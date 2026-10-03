@@ -285,9 +285,7 @@
     "DE624",
     "DE625",
     "DE627",
-    "DE629",
-    "DE630",
-    "DE631"
+    "DE629"
    ],
    "delay_pattern_min": [
     0,
@@ -788,7 +786,7 @@
    "air_conditioning": true,
    "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
    "boarding_hint_en": "Low-floor bus, ramp at the second door.",
-   "source": "ttss"
+   "source": "illustrative"
   },
   {
    "side_number": "DE631",
@@ -800,7 +798,7 @@
    "air_conditioning": true,
    "boarding_hint_pl": "Autobus niskopodłogowy, rampa przy drugich drzwiach.",
    "boarding_hint_en": "Low-floor bus, ramp at the second door.",
-   "source": "ttss"
+   "source": "illustrative"
   },
   {
    "side_number": "BH085",
@@ -812,7 +810,7 @@
    "air_conditioning": true,
    "boarding_hint_pl": "Autobus przegubowy niskopodłogowy, rampa przy drugich drzwiach.",
    "boarding_hint_en": "Articulated low-floor bus, ramp at the second door.",
-   "source": "ttss"
+   "source": "illustrative"
   },
   {
    "side_number": "DN001",
@@ -824,7 +822,7 @@
    "air_conditioning": true,
    "boarding_hint_pl": "Autobus przegubowy elektryczny, rampa przy drugich drzwiach.",
    "boarding_hint_en": "Electric articulated bus, ramp at the second door.",
-   "source": "ttss"
+   "source": "illustrative"
   }
  ]
 }

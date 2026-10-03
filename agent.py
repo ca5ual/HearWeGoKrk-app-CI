@@ -54,6 +54,9 @@ _REPEAT = re.compile(r"(powt[oó]rz|repeat|say again)", re.I)
 _LINE_WORDS = [("sto dwadzie[sś]cia cztery", "B124"), ("czternast", "T14"), ("dwunast", "T12"), ("jedynk", "T1"),
                (r"\b124\b", "B124"), (r"\b424\b", "B424"), (r"\b14\b", "T14"), (r"\b12\b", "T12"), (r"\b1\b", "T1")]
 
+# "Kiedy następny tramwaj?": departures from the nearest stop that has trams.
+_MODE_WORDS = [(r"tramwaj|\btrams?\b", "tram"), (r"autobus|\bbus(es)?\b", "bus")]
+
 _MODE_PL = {"tram": "tramwaj", "bus": "autobus"}
 _MODE_EN = {"tram": "tram", "bus": "bus"}
 
@@ -105,8 +108,9 @@ def _say_departures(session, res: dict, certainty: bool = False) -> str:
         return session.t("Nie widzę teraz żadnych odjazdów.", "I can't see any departures right now.")
     d0 = deps[0]
     mode = (_MODE_PL if session.lang == "pl" else _MODE_EN)[d0["mode"]]
-    text = session.t(f"{mode.capitalize()} {d0['line_number']} za {_mins(session, d0['eta_min'])}",
-                     f"{mode.capitalize()} {d0['line_number']} in {_mins(session, d0['eta_min'])}")
+    # Say the stop: the line asked about may leave from a stop further away than the nearest one.
+    text = session.t(f"{mode.capitalize()} {d0['line_number']} z przystanku {res['stop_name']} za {_mins(session, d0['eta_min'])}",
+                     f"{mode.capitalize()} {d0['line_number']} from {res['stop_name']} in {_mins(session, d0['eta_min'])}")
     if certainty:
         live = d0["data_source"] in ("live", "simulated_live")
         source = (session.t("Według danych na żywo", "According to live data") if live
@@ -222,7 +226,8 @@ def rule_respond(session, text: str) -> AgentReply:
 
     if _DEPART.search(t) or _LATE.search(t):
         line_id = next((lid for pat, lid in _LINE_WORDS if re.search(pat, t, re.I)), None)
-        r = run("get_departures", line_id=line_id)
+        mode = None if line_id else next((m for pat, m in _MODE_WORDS if re.search(pat, t, re.I)), None)
+        r = run("get_departures", line_id=line_id, mode=mode)
         return _remember(session, AgentReply(_say_departures(session, r, certainty=bool(_LATE.search(t))), out))
 
     # 5) Default: treat the utterance as a destination.

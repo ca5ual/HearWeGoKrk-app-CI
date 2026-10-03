@@ -66,6 +66,43 @@ def test_s12_will_it_be_late_names_the_data_source():
     assert ".." not in r["reply_text"]
 
 
+def test_departures_of_a_line_come_from_a_stop_it_serves():
+    """The nearest stop (the TAURON Arena bus stop) has no trams; tram 12 leaves from Wieczysta."""
+    for asked, line_id in (("Kiedy następna czternastka?", "T14"), ("Kiedy następna dwunastka?", "T12")):
+        r = say(asked)
+        res = r["tools"][0]["result"]
+        served = {s["stop"] for s in rt.LINES[line_id]["stops"]}
+        assert res["stop_id"] in served, asked
+        assert res["departures"] and "Nie widzę" not in r["reply_text"], asked
+
+
+def test_departures_by_mode():
+    r = say("Kiedy następny autobus?")
+    deps = r["tools"][0]["result"]["departures"]
+    assert deps and all(d["mode"] == "bus" for d in deps)
+    s = Session()
+    assert tools.execute(s, "get_departures", {"line_id": "T99"}).result["error"] == "unknown_line"
+    mixed = tools.execute(s, "get_departures", {"line_id": "B124", "mode": "tram"}).result
+    assert mixed["departures"] and all(d["line_id"] == "B124" for d in mixed["departures"])
+
+
+def test_mock_data_is_consistent():
+    """Guards for hand-edited mock data: every route leg rides a real line in the right
+    direction, and no vehicle is on two lines (it would be in two places at once)."""
+    seen = {}
+    for line in rt.LINES.values():
+        for v in line["vehicle_rotation"]:
+            assert v in rt.VEHICLES, (line["id"], v)
+            assert v not in seen, f"{v} is on {seen.get(v)} and {line['id']}"
+            seen[v] = line["id"]
+        assert all(s["stop"] in rt.STOPS for s in line["stops"]), line["id"]
+    for dest in rt.ROUTES["destinations"]:
+        for it in dest["itineraries"]:
+            for leg in (l for l in it["legs"] if l["type"] == "ride"):
+                order = [s["stop"] for s in rt.LINES[leg["line"]]["stops"]]
+                assert order.index(leg["from"]) < order.index(leg["to"]), (dest["name"], leg)
+
+
 def test_late_inside_a_word_is_still_a_destination():
     r = say("Take me to the chocolate museum", lang="en")
     assert [t["name"] for t in r["tools"]] == ["plan_route"]
@@ -161,7 +198,7 @@ def test_pick_ticket_reduced_fare():
 
 
 def _plan_agh() -> Session:
-    """AGH from the venue: walk 4, wait 2, bus 124 (DE624) for 28 min, walk 3."""
+    """AGH from the venue: walk, wait, bus 124 (DE624), walk."""
     rt.reset_clock(0)
     s = Session()
     tools.execute(s, "plan_route", {"destination": "agh"})
@@ -169,10 +206,12 @@ def _plan_agh() -> Session:
 
 
 def test_ticket_before_boarding_follows_the_plan():
-    """The bug: ~34 min until the bus reaches AGH, and the agent bought a 15-minute ticket."""
+    """The bug: over half an hour until the bus reaches AGH, and the agent bought a 15-minute ticket."""
     s = _plan_agh()
-    assert wallet.trip_minutes(s, None) == 34  # 4 + 2 + 28; the final walk needs no ticket
-    assert wallet.pick_ticket(34)["id"] == "kmk_60min_n"
+    walk, ride = s.plan["legs"]
+    expected = walk["minutes"] + ride["wait_min"] + ride["ride_min"]  # the final walk needs no ticket
+    assert wallet.trip_minutes(s, None) == expected > 30
+    assert wallet.pick_ticket(expected)["id"] == "kmk_60min_n"
 
 
 def test_ticket_on_the_planned_bus_uses_its_live_eta():
@@ -236,11 +275,15 @@ def test_rule_agent_offers_the_ticket_it_will_buy():
 
 
 def test_mock_fleet_is_ttss():
-    """Every vehicle except the S5 one comes from the TTSS snapshot, with TTSS-style side numbers."""
+    """Vehicles marked "ttss" really are in the TTSS snapshot; the rest are "illustrative"
+    (RZ105 for S5, and the bus 424 fleet). All have TTSS-style side numbers."""
     import re
+    snapshot = (rt.DATA_DIR / "ttss_snapshot.json").read_text(encoding="utf-8")
     for v in rt.VEHICLES.values():
         assert re.fullmatch(r"[A-Z]{2}\d{3}", v["side_number"])
-        assert v["source"] == ("illustrative" if v["side_number"] == "RZ105" else "ttss")
+        assert v["source"] in ("ttss", "illustrative")
+        assert (f'"{v["side_number"]}"' in snapshot) == (v["source"] == "ttss"), v["side_number"]
+    assert rt.VEHICLES["RZ105"]["source"] == "illustrative"
     assert rt.LINES["T12"]["vehicle_rotation"][0] == "HG935"
 
 
