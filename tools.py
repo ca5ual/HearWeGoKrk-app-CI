@@ -37,8 +37,13 @@ class Tool:
 
 
 # --- helpers -------------------------------------------------------------
-def _nearest_stop_id(lat: float, lon: float) -> str:
-    return min(provider.STOPS.values(),
+def _nearest_stop_id(lat: float, lon: float, line_id: str | None = None, mode: str | None = None) -> str:
+    """Nearest stop with departures of `line_id` (or of any line of `mode`, or of any line).
+    A line's last stop has no departures, and some stops in stops.json have no line at all."""
+    lines = [l for l in provider.LINES.values()
+             if (line_id is None or l["id"] == line_id) and (mode is None or l["mode"] == mode)]
+    served = {s["stop"] for l in lines for s in l["stops"][:-1]}
+    return min((provider.STOPS[i] for i in served),
                key=lambda s: provider._haversine_m(lat, lon, s["lat"], s["lon"]))["id"]
 
 
@@ -59,11 +64,19 @@ def plan_route(session, destination: str, prefer_low_floor: bool | None = None) 
 
 
 def get_departures(session, stop_id: str | None = None, line_id: str | None = None,
-                   low_floor_only: bool = False, limit: int = 5) -> dict:
-    stop_id = stop_id or _nearest_stop_id(*session.location)
+                   mode: str | None = None, low_floor_only: bool = False, limit: int = 5) -> dict:
+    if line_id and line_id not in provider.LINES:
+        return {"error": "unknown_line", "message": f"No line '{line_id}'. Lines: {', '.join(provider.LINES)}."}
+    if line_id:
+        mode = None  # the line decides ("tramwaj 124" is still bus 124)
+    elif mode not in (None, "tram", "bus"):
+        return {"error": "bad_mode", "message": f"mode must be 'tram' or 'bus', not '{mode}'."}
+    # The nearest stop may not be served by the line asked about (tram 12 leaves from Wieczysta).
+    stop_id = stop_id or _nearest_stop_id(*session.location, line_id=line_id, mode=mode)
     if stop_id not in provider.STOPS:
         return {"error": "unknown_stop", "message": f"No stop '{stop_id}'."}
-    deps = provider.get_departures(stop_id, line_id=line_id, low_floor_only=low_floor_only, limit=limit)
+    deps = provider.get_departures(stop_id, line_id=line_id, low_floor_only=low_floor_only, limit=None)
+    deps = [d for d in deps if mode is None or d["mode"] == mode][:limit]
     return {"stop_id": stop_id, "stop_name": provider.STOPS[stop_id]["name"], "departures": deps}
 
 
@@ -144,11 +157,13 @@ TOOLS: dict[str, Tool] = {
         ui_component="route_results"),
     "get_departures": Tool(
         get_departures,
-        "Next departures from a stop (default: the stop nearest to the user). Each departure has "
+        "Next departures from a stop (default: the nearest stop served by line_id / mode, or the nearest "
+        "stop). Each departure has "
         "eta_min, delay_min, data_source and vehicle.low_floor ('full'|'partial'|'none'). "
         "If the first vehicle has low_floor 'none', warn the user and mention the next low-floor one.",
         _obj({"stop_id": {"type": "string"},
-              "line_id": {"type": "string", "description": "e.g. 'T1', 'T12', 'T14', 'B124'"},
+              "line_id": {"type": "string", "description": "e.g. 'T1', 'T12', 'T14', 'B124', 'B424'"},
+              "mode": {"type": "string", "enum": ["tram", "bus"], "description": "when the user says tram or bus"},
               "low_floor_only": {"type": "boolean"},
               "limit": {"type": "integer"}}),
         ui_component="departures"),

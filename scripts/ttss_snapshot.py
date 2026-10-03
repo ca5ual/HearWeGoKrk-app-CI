@@ -14,6 +14,9 @@ What stays curated (TTSS has no such data): headways, delay patterns, boarding h
 vehicle order (HG935 first on line 12) and one illustrative high-floor tram for scenario S5.
 Run it while trams are running (roughly 5:00–23:00); lines with no live vehicle keep their
 previous snapshot.
+
+WARNING: it drops data added by hand to the mock files: bus 424 and its illustrative vehicles,
+the extra bus 124 stops and travel times, and stops no line here uses (see README section 4).
 """
 
 import json

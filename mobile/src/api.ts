@@ -22,6 +22,8 @@ export const api = {
   wallet: (b: string) => req<Wallet>(b, "/wallet"),
   demoReset: (b: string, offsetMin = 0) =>
     req(b, "/demo/reset", { method: "POST", body: JSON.stringify({ offset_min: offsetMin }) }),
+  demoClock: (b: string, offsetMin: number) =>
+    req(b, "/demo/clock", { method: "POST", body: JSON.stringify({ offset_min: offsetMin }) }),
   demoGps: (b: string, sideNumber: string) =>
     req(b, "/demo/gps", { method: "POST", body: JSON.stringify({ side_number: sideNumber }) }),
   demoGpsClear: (b: string) => req(b, "/demo/gps", { method: "DELETE" }),
