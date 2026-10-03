@@ -1,0 +1,80 @@
+{
+  "_meta": {
+    "note": "MOCK route templates from the demo origin (venue). The simulator fills in live departure times. Several itineraries per destination = alternatives the planner compares.",
+    "origin": { "name": "HackYeah venue (Tauron Arena)", "lat": 50.0672, "lon": 19.9912 }
+  },
+  "ambiguous_aliases": {
+    "rondo": ["rondo_mogilskie_dest", "rondo_grzegorzeckie_dest"],
+    "dworzec": ["dworzec_glowny_dest"]
+  },
+  "destinations": [
+    {
+      "id": "rynek_glowny_dest", "name": "Rynek Główny",
+      "aliases": ["rynek", "rynek główny", "rynek glowny", "main square", "old town", "stare miasto", "starówka"],
+      "itineraries": [
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź prosto do przystanku Tauron Arena Al. Pokoju. Przejście ma sygnalizację dźwiękową.", "instruction_en": "Walk straight to the Tauron Arena Al. Pokoju stop. The crossing has an audible signal." },
+          { "type": "ride", "line": "T1", "from": "tauron_arena", "to": "plac_wszystkich_swietych" },
+          { "type": "walk", "minutes": 4, "meters": 300, "to_place": "rynek_glowny", "instruction_pl": "Wysiądź i idź ulicą Grodzką na północ, około 300 metrów.", "instruction_en": "Get off and walk north along Grodzka street, about 300 metres." }
+        ]}
+      ]
+    },
+    {
+      "id": "agh_dest", "name": "AGH (budynek A-0)",
+      "aliases": ["agh", "uczelnia", "a0", "a-0", "university", "akademia górniczo-hutnicza"],
+      "itineraries": [
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź prosto do przystanku Tauron Arena Al. Pokoju.", "instruction_en": "Walk straight to the Tauron Arena Al. Pokoju stop." },
+          { "type": "ride", "line": "T14", "from": "tauron_arena", "to": "agh_ur" },
+          { "type": "walk", "minutes": 3, "meters": 200, "to_place": "agh_a0", "instruction_pl": "Przejdź przez Aleję Mickiewicza na światłach, budynek A-0 jest po prawej.", "instruction_en": "Cross Mickiewicza Avenue at the lights, building A-0 is on your right." }
+        ]}
+      ]
+    },
+    {
+      "id": "dworzec_glowny_dest", "name": "Dworzec Główny",
+      "aliases": ["dworzec główny", "dworzec glowny", "pkp", "main station", "train station", "galeria krakowska"],
+      "itineraries": [
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź do przystanku Tauron Arena Al. Pokoju.", "instruction_en": "Walk to the Tauron Arena Al. Pokoju stop." },
+          { "type": "ride", "line": "T14", "from": "tauron_arena", "to": "dworzec_glowny" },
+          { "type": "walk", "minutes": 2, "meters": 150, "to_place": "dworzec_glowny_poi", "instruction_pl": "Wejście do dworca jest prosto, ścieżką dotykową.", "instruction_en": "The station entrance is straight ahead, follow the tactile path." }
+        ]},
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź do przystanku autobusowego Tauron Arena Al. Pokoju.", "instruction_en": "Walk to the Tauron Arena Al. Pokoju bus stop." },
+          { "type": "ride", "line": "B152", "from": "tauron_arena", "to": "dworzec_glowny_zachod" },
+          { "type": "walk", "minutes": 3, "meters": 220, "to_place": "dworzec_glowny_poi", "instruction_pl": "Przejściem podziemnym do hali dworca, winda po lewej.", "instruction_en": "Use the underpass to the station hall, lift on your left." }
+        ]}
+      ]
+    },
+    {
+      "id": "rondo_mogilskie_dest", "name": "Rondo Mogilskie",
+      "aliases": ["rondo mogilskie", "mogilskie"],
+      "itineraries": [
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź do przystanku Tauron Arena Al. Pokoju.", "instruction_en": "Walk to the Tauron Arena Al. Pokoju stop." },
+          { "type": "ride", "line": "T14", "from": "tauron_arena", "to": "rondo_mogilskie" }
+        ]}
+      ]
+    },
+    {
+      "id": "rondo_grzegorzeckie_dest", "name": "Rondo Grzegórzeckie",
+      "aliases": ["rondo grzegórzeckie", "rondo grzegorzeckie", "grzegórzeckie"],
+      "itineraries": [
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź do przystanku Tauron Arena Al. Pokoju.", "instruction_en": "Walk to the Tauron Arena Al. Pokoju stop." },
+          { "type": "ride", "line": "T1", "from": "tauron_arena", "to": "rondo_grzegorzeckie" }
+        ]}
+      ]
+    },
+    {
+      "id": "bronowice_dest", "name": "Bronowice Małe",
+      "aliases": ["bronowice", "bronowice małe", "bronowice male"],
+      "itineraries": [
+        { "legs": [
+          { "type": "walk", "minutes": 3, "meters": 180, "to": "tauron_arena", "instruction_pl": "Idź do przystanku Tauron Arena Al. Pokoju.", "instruction_en": "Walk to the Tauron Arena Al. Pokoju stop." },
+          { "type": "ride", "line": "T14", "from": "tauron_arena", "to": "bronowice_male" }
+        ]}
+      ]
+    }
+  ]
+}

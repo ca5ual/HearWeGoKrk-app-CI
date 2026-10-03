@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "note": "MOCK. Line numbers and vehicle models exist in Kraków, but routes, side numbers and assignments are illustrative.",
+    "timing": "All times are minutes relative to simulation start (see mock_realtime.reset_clock). 't' = minutes from the first stop of the trip.",
+    "low_floor_values": "full | partial | none"
+  },
+  "lines": [
+    {
+      "id": "T1", "number": "1", "mode": "tram", "headsign": "Plac Wszystkich Świętych",
+      "first_departure_offset_min": 5, "headway_min": 10,
+      "vehicle_rotation": ["RF305", "RZ601", "RZ614"],
+      "delay_pattern_min": [0, 2, 0, 1],
+      "stops": [
+        { "stop": "tauron_arena", "t": 0 },
+        { "stop": "rondo_grzegorzeckie", "t": 4 },
+        { "stop": "hala_targowa", "t": 7 },
+        { "stop": "starowislna", "t": 9 },
+        { "stop": "poczta_glowna", "t": 11 },
+        { "stop": "plac_wszystkich_swietych", "t": 13 }
+      ]
+    },
+    {
+      "id": "T14", "number": "14", "mode": "tram", "headsign": "Bronowice Małe",
+      "first_departure_offset_min": 3, "headway_min": 8,
+      "vehicle_rotation": ["HY854", "RZ612", "NF417"],
+      "delay_pattern_min": [3, 0, 1],
+      "stops": [
+        { "stop": "tauron_arena", "t": 0 },
+        { "stop": "rondo_mogilskie", "t": 4 },
+        { "stop": "dworzec_glowny", "t": 7 },
+        { "stop": "teatr_bagatela", "t": 11 },
+        { "stop": "agh_ur", "t": 14 },
+        { "stop": "bronowice_male", "t": 22 }
+      ]
+    },
+    {
+      "id": "B152", "number": "152", "mode": "bus", "headsign": "Dworzec Główny Zachód",
+      "first_departure_offset_min": 6, "headway_min": 15,
+      "vehicle_rotation": ["BR785", "BR792"],
+      "delay_pattern_min": [0, 4],
+      "stops": [
+        { "stop": "tauron_arena", "t": 0 },
+        { "stop": "rondo_mogilskie", "t": 5 },
+        { "stop": "dworzec_glowny_zachod", "t": 10 }
+      ]
+    }
+  ],
+  "vehicles": [
+    { "side_number": "HY854", "mode": "tram", "model": "Konstal 105Na", "low_floor": "none", "audio_stop_announcements": false, "air_conditioning": false, "boarding_hint_pl": "Wysokie wejście, trzy stopnie przy każdych drzwiach.", "boarding_hint_en": "High-floor, three steps at every door." },
+    { "side_number": "RZ601", "mode": "tram", "model": "PESA 2014N Krakowiak", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
+    { "side_number": "RZ612", "mode": "tram", "model": "PESA 2014N Krakowiak", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
+    { "side_number": "RZ614", "mode": "tram", "model": "PESA 2014N Krakowiak", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
+    { "side_number": "RF305", "mode": "tram", "model": "Stadler Tramlink (Lajkonik)", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Niska podłoga, wejście bez stopni.", "boarding_hint_en": "Low-floor, step-free boarding." },
+    { "side_number": "NF417", "mode": "tram", "model": "Bombardier NGT6", "low_floor": "partial", "audio_stop_announcements": true, "air_conditioning": false, "boarding_hint_pl": "Niska podłoga tylko w środkowym członie — wsiadaj środkowymi drzwiami.", "boarding_hint_en": "Low floor only in the middle section — use the middle doors." },
+    { "side_number": "BR785", "mode": "bus", "model": "Solaris Urbino 18 electric", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Autobus niskopodłogowy, przyklęk. Pierwsze drzwi przy kierowcy.", "boarding_hint_en": "Low-floor bus with kneeling. First door is next to the driver." },
+    { "side_number": "BR792", "mode": "bus", "model": "Solaris Urbino 18 electric", "low_floor": "full", "audio_stop_announcements": true, "air_conditioning": true, "boarding_hint_pl": "Autobus niskopodłogowy, przyklęk. Pierwsze drzwi przy kierowcy.", "boarding_hint_en": "Low-floor bus with kneeling. First door is next to the driver." }
+  ]
+}

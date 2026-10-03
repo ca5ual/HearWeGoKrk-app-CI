@@ -1,0 +1,127 @@
+{
+  "_meta": {
+    "note": "MOCK. Persona and card are invented. Ticket types and reduced (ulgowy) prices for 15 min / 30 min-or-1-ride come from a Jakdojade screenshot (Oct 2026, zones I+II+III); full-fare prices are assumed 2x reduced — verify."
+  },
+  "user": {
+    "id": "u_demo_01",
+    "first_name": "Tomasz",
+    "language": "pl",
+    "accessibility_profile": {
+      "visual_impairment": "blind",
+      "uses_screen_reader": true,
+      "prefers_low_floor": true,
+      "has_guide_dog": true,
+      "speech_rate": "fast"
+    },
+    "privacy": {
+      "speak_amounts_aloud": "headphones_only",
+      "require_confirmation_for_payments": true,
+      "confirmation_timeout_s": 8
+    },
+    "saved_places": [
+      {
+        "label": "dom",
+        "aliases": [
+          "dom",
+          "home",
+          "do domu"
+        ],
+        "address": "ul. Przykładowa 12, Kraków",
+        "lat": 50.0815,
+        "lon": 19.8885,
+        "nearest_stop": "bronowice_male"
+      },
+      {
+        "label": "praca",
+        "aliases": [
+          "praca",
+          "work",
+          "do pracy"
+        ],
+        "address": "AGH, budynek A-0",
+        "lat": 50.0646,
+        "lon": 19.923,
+        "nearest_stop": "agh_ur"
+      }
+    ]
+  },
+  "wallet": {
+    "balance_pln": 20.14,
+    "cards": [
+      {
+        "id": "card_1",
+        "brand": "Visa",
+        "last4": "0420",
+        "is_default": true,
+        "label_pl": "Visa kończąca się na 0420"
+      }
+    ],
+    "active_tickets": [],
+    "history": [
+      {
+        "date": "2026-10-01T08:12:00+02:00",
+        "ticket_id": "kmk_15min_n",
+        "price_pln": 4.0,
+        "vehicle": "RZ612"
+      },
+      {
+        "date": "2026-09-30T17:40:00+02:00",
+        "ticket_id": "kmk_30min_n",
+        "price_pln": 6.0,
+        "vehicle": "BR785"
+      }
+    ]
+  },
+  "ticket_catalog": [
+    {
+      "id": "kmk_15min_u",
+      "name_pl": "bilet 15-minutowy ulgowy",
+      "name_en": "15-minute ticket, reduced fare",
+      "price_pln": 2.0,
+      "valid_min": 15,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_15min_n",
+      "name_pl": "bilet 15-minutowy normalny",
+      "name_en": "15-minute ticket, full fare",
+      "price_pln": 4.0,
+      "valid_min": 15,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_30min_u",
+      "name_pl": "bilet 30-minutowy lub na 1 przejazd, ulgowy",
+      "name_en": "30-minute or single-ride ticket, reduced fare",
+      "price_pln": 3.0,
+      "valid_min": 30,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    },
+    {
+      "id": "kmk_30min_n",
+      "name_pl": "bilet 30-minutowy lub na 1 przejazd, normalny",
+      "name_en": "30-minute or single-ride ticket, full fare",
+      "price_pln": 6.0,
+      "valid_min": 30,
+      "zones": "I+II+III",
+      "category": "czasowe",
+      "requires_vehicle_side_number": true
+    }
+  ],
+  "confirmation_templates": {
+    "purchase_pl_private": "Kupuję {ticket_name}, {price} zł, płacę {payment_label}, kasuję w pojeździe {side_number}. Potwierdzasz?",
+    "purchase_pl_public": "Kupuję {ticket_name}, kasuję w pojeździe {side_number}. Kwota jest na ekranie. Potwierdzasz?",
+    "purchase_en_private": "Buying a {ticket_name}, {price} PLN, paying {payment_label}, validated in vehicle {side_number}. Confirm?",
+    "purchase_en_public": "Buying a {ticket_name}, validated in vehicle {side_number}. The price is on screen. Confirm?",
+    "silence_retry_pl": "Nie usłyszałem odpowiedzi. Czy kupić bilet? Powiedz tak albo nie.",
+    "silence_retry_en": "I didn't hear an answer. Should I buy the ticket? Say yes or no.",
+    "silence_cancel_pl": "Nie kupiłem biletu. Możesz poprosić ponownie w każdej chwili.",
+    "silence_cancel_en": "I didn't buy the ticket. You can ask again any time."
+  }
+}
