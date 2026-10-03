@@ -26,6 +26,10 @@ import {
 import { watchLocation, type Coords } from "./location";
 
 type Component = UiPayload["component"];
+
+// If the server sends nothing for this long while we wait for an answer, the connection is
+// probably dead (Wi-Fi dropped it silently): give up, tell the user, reconnect.
+const REPLY_TIMEOUT_MS = 45000; // > a slow Claude turn (tool round + one SDK retry)
 type UiData = { [K in Component]?: Extract<UiPayload, { component: K }>["data"] };
 
 export type Pending = { id: string; timeoutS: number; data: PreparedTicket; receivedAt: number };
@@ -96,13 +100,40 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const userTurn = useRef(false);            // between our utterance and the next idle: navigate on `ui`
   const reply = useRef<{ text: string; chunks: string[] } | null>(null);
   const settings = useRef({ headphones, lang });
+  const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
 
   // --- sending ------------------------------------------------------------
-  const send = useCallback((msg: object) => {
-    if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(msg));
+  /** Returns false when the socket isn't open (the message is dropped). */
+  const send = useCallback((msg: object): boolean => {
+    if (ws.current?.readyState !== WebSocket.OPEN) return false;
+    ws.current.send(JSON.stringify(msg));
+    return true;
   }, []);
+
+  const stopWaiting = useCallback(() => {
+    if (watchdog.current) clearTimeout(watchdog.current);
+    watchdog.current = null;
+  }, []);
+
+  /** (Re)start the reply timeout. Every server message during a turn proves the server is alive. */
+  const waitForReply = useCallback(() => {
+    stopWaiting();
+    watchdog.current = setTimeout(() => {
+      watchdog.current = null;
+      console.warn("[ws] no reply in", REPLY_TIMEOUT_MS, "ms, reconnecting");
+      setState("idle");
+      setNotice("Serwer nie odpowiada. Spróbuj jeszcze raz.");
+      ws.current?.close(); // onclose -> reconnect
+    }, REPLY_TIMEOUT_MS);
+  }, [stopWaiting]);
+
+  const notConnected = useCallback(() => {
+    stopWaiting();
+    setState("idle");
+    setNotice("Brak połączenia z serwerem. Spróbuj za chwilę.");
+  }, [stopWaiting]);
 
   const sendContext = useCallback(() => {
     send({
@@ -125,10 +156,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     } catch {
       return;
     }
+    if (watchdog.current) waitForReply(); // server is alive: restart the timeout
     switch (m.type) {
       case "state":
         setState(m.value);
         if (m.value === "idle") {
+          stopWaiting();
           const r = reply.current;
           reply.current = null;
           if (r) {
@@ -184,7 +217,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
         break;
       // "session": nothing to do
     }
-  }, [refreshWallet]);
+  }, [refreshWallet, waitForReply, stopWaiting]);
 
   // --- connection with auto-reconnect ---------------------------------------
   useEffect(() => {
@@ -199,8 +232,10 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
         sendContext();
       };
       sock.onmessage = (e) => onMessage(String(e.data));
-      sock.onclose = () => {
+      sock.onclose = (e) => {
         if (ws.current === sock) ws.current = null;
+        console.warn(`[ws] closed (code ${e.code}${e.reason ? `, ${e.reason}` : ""}), retrying in 2 s`);
+        if (watchdog.current) notConnected(); // a turn was in flight
         setConnection("closed");
         setState("idle");
         if (!closed) retry = setTimeout(connect, 2000);
@@ -214,7 +249,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(retry);
       ws.current?.close();
     };
-  }, [backendUrl, onMessage, sendContext, refreshWallet]);
+  }, [backendUrl, onMessage, sendContext, refreshWallet, notConnected]);
 
   // GPS + settings -> context message.
   useEffect(() => {
@@ -250,8 +285,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const sendText = useCallback((text: string) => {
     if (!text.trim()) return;
     beginTurn();
-    send({ type: "text", text });
-  }, [send]);
+    if (send({ type: "text", text })) waitForReply();
+    else notConnected();
+  }, [send, waitForReply, notConnected]);
 
   const startListening = useCallback(async () => {
     const perm = await requestRecordingPermissionsAsync();
@@ -270,14 +306,24 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     setState("thinking");
     const uri = recorder.uri;
     if (!uri) return setState("idle");
-    for (const data of await recordingToChunks(uri)) send({ type: "audio_chunk", data });
-    send({ type: "end_of_speech" });
-  }, [recorder, send]);
+    try {
+      for (const data of await recordingToChunks(uri)) {
+        if (!send({ type: "audio_chunk", data })) return notConnected();
+      }
+    } catch (e) {
+      console.warn("[audio] could not read the recording:", e);
+      setState("idle");
+      return setNotice("Nie udało się nagrać. Spróbuj jeszcze raz.");
+    }
+    if (send({ type: "end_of_speech" })) waitForReply();
+    else notConnected();
+  }, [recorder, send, waitForReply, notConnected]);
 
   const stop = useCallback(() => {
     beginTurn();
-    send({ type: "stop" });
-  }, [send]);
+    if (send({ type: "stop" })) waitForReply();
+    else notConnected();
+  }, [send, waitForReply, notConnected]);
 
   // Modal buttons. README 4.2 has no "confirm" message yet, so the button says "tak" as text —
   // exactly what the voice path does. "Anuluj" uses the README `stop` message.

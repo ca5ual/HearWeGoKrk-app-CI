@@ -64,8 +64,9 @@ function wavToPcm(bytes: Uint8Array): Uint8Array {
   if (bytes.length < 12 || tag(0) !== "RIFF" || tag(8) !== "WAVE") return bytes;
   let o = 12;
   while (o + 8 <= bytes.length) {
-    const size = bytes[o + 4] | (bytes[o + 5] << 8) | (bytes[o + 6] << 16) | (bytes[o + 7] << 24);
-    if (tag(o) === "data") return bytes.subarray(o + 8, o + 8 + size);
+    // >>> 0: unsigned. A signed size could be negative and make this loop run forever.
+    const size = (bytes[o + 4] | (bytes[o + 5] << 8) | (bytes[o + 6] << 16) | (bytes[o + 7] << 24)) >>> 0;
+    if (tag(o) === "data") return bytes.subarray(o + 8, Math.min(bytes.length, o + 8 + size));
     o += 8 + size + (size % 2);
   }
   return bytes;

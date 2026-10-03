@@ -28,7 +28,8 @@ class AgentReply:
 
 
 async def respond(session, text: str) -> AgentReply:
-    if USE_LLM:
+    # Nothing heard (silence, or no speech-to-text yet): ask to repeat, don't spend an LLM call.
+    if USE_LLM and text.strip():
         try:
             return await llm_respond(session, text)
         except Exception as e:  # never let the demo die on an API error

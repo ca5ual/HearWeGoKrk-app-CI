@@ -257,3 +257,10 @@ def test_real_sdk_request_and_history_serialization():
     second = bodies[1][1]["messages"]
     assert second[1]["content"][0] == {"type": "thinking", "thinking": "", "signature": "sig"}  # echoed unchanged
     assert second[2]["content"][0]["type"] == "tool_result" and second[2]["content"][0]["tool_use_id"] == "toolu_1"
+
+
+def test_empty_utterance_skips_claude():
+    fake = FakeClaude()  # any request would fail: the script is empty
+    llm_agent._client = fake
+    r = run(Session(), "   ")
+    assert "Nie usłyszałem" in r.text and fake.requests == []
