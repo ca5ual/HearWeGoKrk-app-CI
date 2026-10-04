@@ -111,7 +111,8 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   const ws = useRef<WebSocket | null>(null);
   const coords = useRef<Coords | null>(null);
-  const reply = useRef<{ text: string; chunks: string[] } | null>(null);
+  const reply = useRef<{ text: string; speech: string; chunks: string[] } | null>(null);
+  const spokenText = useRef(""); // the last reply as the voice reads it (reply_text "speak"), for "Powtórz"
   const settings = useRef({ headphones, lang, useGps });
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<Pending | null>(null);
@@ -198,9 +199,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
             // If the player never reports the end, don't stay deaf. (beginTurn clears it when the
             // user interrupts, so it can't open the mic in the middle of a later turn.)
             if (playbackFallback.current) clearTimeout(playbackFallback.current);
-            playbackFallback.current = setTimeout(done, (r.text.length / 11 + 3) * 1000);
+            playbackFallback.current = setTimeout(done, (r.speech.length / 11 + 3) * 1000);
             if (r.chunks.length) playReplyAudio(r.chunks, done);
-            else speakText(r.text, settings.current.lang, done); // backend TTS not wired yet -> phone voice
+            else speakText(r.speech, settings.current.lang, done); // backend TTS not wired yet -> phone voice
           }
         }
         break;
@@ -208,9 +209,10 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
         setTranscript(m.text);
         break;
       case "reply_text":
-        setReplyText(m.text);
+        setReplyText(m.text); // shown on screen as written ("…głosowym AI.")
         forgetLastAudio();
-        reply.current = { text: m.text, chunks: [] };
+        spokenText.current = m.speak ?? m.text; // spoken form: the AI disclosure says "ej-aj"
+        reply.current = { text: m.text, speech: spokenText.current, chunks: [] };
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         break;
       case "audio_chunk":
@@ -517,7 +519,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   const answerNow = useCallback(() => afterReply.current(), []);
 
-  const replay = useCallback(() => replayLast(replyText, settings.current.lang), [replyText]);
+  const replay = useCallback(() => replayLast(spokenText.current, settings.current.lang), []);
 
   const setRouteResult = useCallback((r: RouteResult) => {
     setUi((u) => ({ ...u, route_results: r }));

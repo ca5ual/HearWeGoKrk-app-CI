@@ -168,6 +168,11 @@ Server → client:
 {"type": "error", "message": "..."}
 ```
 
+- `reply_text`: the first reply of every conversation (and the first one after `POST /demo/reset`) starts
+  with the AI disclosure "Rozmawiasz z asystentem głosowym AI." (AI Act). That message also carries an
+  optional `speak` field: the same text as the voice reads it ("…głosowym ej-aj.", so the Polish voice says
+  the English "AI"). The phone shows `text`; when there is no server audio it speaks `speak ?? text`.
+
 ### 5.3 REST (debug + demo control)
 
 | Endpoint | Purpose |
@@ -193,6 +198,7 @@ Server → client:
 8. Never invent departures or prices. If a tool fails, say so.
 9. Answer in the language the user spoke.
 10. **Ticket length**: let the backend pick a ticket that lasts the whole ride; warn if a ticket the user asked for is too short.
+11. **AI disclosure**: the server, not the LLM, starts the first voice reply with "Rozmawiasz z asystentem głosowym AI."; the agent doesn't introduce itself again.
 
 ## 7. Demo script (≈90 s)
 

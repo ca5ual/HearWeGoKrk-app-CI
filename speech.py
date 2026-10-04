@@ -29,6 +29,18 @@ def spell_side_numbers(text: str) -> str:
     """Vehicle side numbers are spoken one character at a time: HG935 / "HG 935" -> "H G 9 3 5"."""
     return _SIDE_NUMBER.sub(lambda m: " ".join(m.groups()), text)
 
+
+# AI Act art. 50: every voice user first hears that this is an AI (voice_ws.Conversation.speak).
+# Shown as written; spoken with "AI" respelled, so the Polish voice says the English "ej-aj".
+AI_DISCLOSURE = "Rozmawiasz z asystentem głosowym AI."
+AI_DISCLOSURE_SPOKEN = "Rozmawiasz z asystentem głosowym ej-aj."
+
+
+def disclosure_speech(lang: str) -> str:
+    """The disclosure as the TTS voice should read it."""
+    return AI_DISCLOSURE_SPOKEN if lang == "pl" else AI_DISCLOSURE
+
+
 TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
 CHUNK_BYTES = 16_000  # ~1 s of 128 kbps mp3 per WebSocket message
 

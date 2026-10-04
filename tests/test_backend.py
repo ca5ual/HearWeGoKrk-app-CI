@@ -455,6 +455,24 @@ def test_demo_reset_clears_open_websocket():
     assert wallet.get_balance(Session())["balance_pln"] == 20.14
 
 
+def test_first_voice_reply_discloses_ai():
+    """AI Act: every voice user first hears "Rozmawiasz z asystentem głosowym AI." ("AI" said in English)."""
+    assert speech.AI_DISCLOSURE == "Rozmawiasz z asystentem głosowym AI."
+    with client.websocket_connect("/ws/voice") as ws:
+        _until_idle(ws)
+        ws.send_json({"type": "text", "text": "Jak dojadę na Rynek?"})
+        first = next(m for m in _until_idle(ws) if m["type"] == "reply_text")
+        assert first["text"].startswith(speech.AI_DISCLOSURE + " ") and "Na miejscu o" in first["text"]
+        assert first["speak"].startswith(speech.AI_DISCLOSURE_SPOKEN + " ") and speech.AI_DISCLOSURE not in first["speak"]
+        ws.send_json({"type": "text", "text": "Jak dojadę na Rynek?"})
+        second = next(m for m in _until_idle(ws) if m["type"] == "reply_text")
+        assert not second["text"].startswith(speech.AI_DISCLOSURE) and "speak" not in second
+        client.post("/demo/reset", json={"offset_min": 0})  # new conversation -> disclose again
+        ws.send_json({"type": "text", "text": "Jak dojadę na Rynek?"})
+        again = next(m for m in _until_idle(ws) if m["type"] == "reply_text")
+        assert again["text"].startswith(speech.AI_DISCLOSURE + " ")
+
+
 def test_spoken_answer_closes_the_modal():
     """Voice "nie" cancels and tells the phone (modal closes); voice "tak" buys without pending_cancelled."""
     _board_hg935()
@@ -552,6 +570,7 @@ def test_long_llm_reply_does_not_eat_the_confirmation_time(monkeypatch):
         async def fake_send(type_, **payload):
             sent.append({"type": type_, **payload})
         conv.send = fake_send
+        conv.session.ai_disclosed = True  # the disclosure is covered by test_first_reply_discloses_ai_and_the_window_counts_it
         _board_hg935()
         monkeypatch.setattr(agent, "respond", chatty)
         await conv.handle_utterance("kup bilet")
@@ -562,6 +581,34 @@ def test_long_llm_reply_does_not_eat_the_confirmation_time(monkeypatch):
         assert "H G 9 3 5" in spoken[0] and "Potwierdzasz?" in spoken[0]
         assert s.pending.created_at > time.time()          # window starts after the question
         assert not s.pending.hard_expired()
+        conv.close()
+
+    asyncio.run(run())
+
+
+def test_first_reply_discloses_ai_and_the_window_counts_it():
+    """A purchase question as the very first reply: the disclosure is read out first, so the
+    silence window and hard expiry start only after both."""
+    import asyncio
+    import time
+
+    import voice_ws
+
+    async def run():
+        sent = []
+        conv = voice_ws.Conversation(ws=None)
+
+        async def fake_send(type_, **payload):
+            sent.append({"type": type_, **payload})
+        conv.send = fake_send
+        _board_hg935()
+        await conv.handle_utterance("kup bilet")
+        s = conv.session
+        confirmation = next(m for m in sent if m["type"] == "pending_confirmation")["data"]["confirmation_text"]
+        text = next(m for m in sent if m["type"] == "reply_text")["text"]
+        assert text == speech.AI_DISCLOSURE + " " + speech.spell_side_numbers(confirmation)
+        assert s.ai_disclosed
+        assert s.pending.created_at >= time.time() + voice_ws.speech_seconds(text) - 1
         conv.close()
 
     asyncio.run(run())

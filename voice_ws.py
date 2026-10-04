@@ -49,14 +49,25 @@ class Conversation:
         async with self.lock:
             await self.ws.send_json({"type": type_, **payload})
 
+    def _intro(self) -> str:
+        """What speak() puts before the next reply: the AI disclosure, once per conversation."""
+        return "" if self.session.ai_disclosed else speech.AI_DISCLOSURE + " "
+
     async def speak(self, text: str, haptic: str | None = None) -> None:
-        """Send the text, then stream TTS audio. The phone shows the text immediately."""
+        """Send the text, then stream TTS audio. The phone shows the text immediately.
+        The first reply of a conversation starts with the AI disclosure (AI Act)."""
         text = speech.spell_side_numbers(text)  # every reply: LLM, rule brain, confirmation_text
-        await self.send("reply_text", text=text)
+        spoken = text
+        if not self.session.ai_disclosed:
+            self.session.ai_disclosed = True  # before any await: a timer can't disclose a second time
+            spoken = f"{speech.disclosure_speech(self.session.lang)} {text}"
+            text = f"{speech.AI_DISCLOSURE} {text}"
+        # "speak": what the voice reads, when it differs from the text on screen ("AI" -> "ej-aj")
+        await self.send("reply_text", text=text, **({"speak": spoken} if spoken != text else {}))
         if haptic:
             await self.send("haptic", pattern=haptic)
         await self.send("state", value="speaking")
-        async for chunk in speech.synthesize(text, self.session.lang):
+        async for chunk in speech.synthesize(spoken, self.session.lang):
             await self.send("audio_chunk", data=base64.b64encode(chunk).decode())
         await self.send("state", value="idle")
 
@@ -95,7 +106,7 @@ class Conversation:
             # Speak only the confirmation (ticket, price, vehicle, "Potwierdzasz?"): a long LLM
             # answer would eat the time the user has to say "tak".
             reply.text = new["confirmation_text"]
-            grace = speech_seconds(reply.text)
+            grace = speech_seconds(self._intro() + reply.text)  # the AI disclosure is read out first
             s.pending.created_at = time.time() + grace  # hard expiry counts from after the question
             self._restart_confirmation_timer(grace)
         # A spoken "nie" / "stop" cancelled the purchase: close the confirmation modal on the phone.
@@ -105,7 +116,7 @@ class Conversation:
             await self.send("pending_cancelled", id=before)
         elif before and s.pending is not None and s.pending.id == before:
             # Unclear answer: a fresh window for the next one, after this reply is read out.
-            self._restart_confirmation_timer(speech_seconds(reply.text))
+            self._restart_confirmation_timer(speech_seconds(self._intro() + reply.text))
         await self.speak(reply.text)
 
     # --- confirmation timeout ("cisza nie jest zgodą") ------------------
