@@ -51,6 +51,7 @@ class Conversation:
 
     async def speak(self, text: str, haptic: str | None = None) -> None:
         """Send the text, then stream TTS audio. The phone shows the text immediately."""
+        text = speech.spell_side_numbers(text)  # every reply: LLM, rule brain, confirmation_text
         await self.send("reply_text", text=text)
         if haptic:
             await self.send("haptic", pattern=haptic)
@@ -227,6 +228,11 @@ class Conversation:
 
 # Open connections, so /demo/reset can clear them too.
 ACTIVE: set[Conversation] = set()
+
+
+def session_by_id(session_id: str | None) -> Session | None:
+    """The voice session of an open connection (a route picked on screen must reach it)."""
+    return next((c.session for c in ACTIVE if session_id and c.session.id == session_id), None)
 
 
 @router.websocket("/ws/voice")

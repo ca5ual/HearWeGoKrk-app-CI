@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pytest
 from fastapi.testclient import TestClient
 
+import speech
 import tools
 import wallet
 from app import app
@@ -261,12 +262,19 @@ def _plan_agh() -> Session:
 
 
 def test_ticket_before_boarding_follows_the_plan():
-    """The bug: over half an hour until the bus reaches AGH, and the agent bought a 15-minute ticket."""
+    """Not on board yet: the ride from boarding (validated in the vehicle), without the walk and the wait."""
     s = _plan_agh()
-    walk, ride = s.plan["legs"]
-    expected = walk["minutes"] + ride["wait_min"] + ride["ride_min"]  # the final walk needs no ticket
-    assert wallet.trip_minutes(s, None) == expected > 30
-    assert wallet.pick_ticket(expected)["id"] == "kmk_60min_n"
+    _, ride = s.plan["legs"]
+    assert wallet.trip_minutes(s, None) == ride["ride_min"]  # the final walk needs no ticket either
+
+
+def test_ticket_before_boarding_al_pokoju_to_rondo_mogilskie():
+    """Bus 124 Al. Pokoju -> Rondo Mogilskie is 20 min (stop t 0 -> 20): a 30-minute ticket, not 60."""
+    rt.reset_clock(0)
+    s = Session()
+    tools.execute(s, "plan_route", {"destination": "rondo mogilskie"})
+    prep = tools.execute(s, "prepare_ticket", {"side_number": "DE777"}).result
+    assert prep["trip_min"] == 20 and prep["ticket_id"] == "kmk_30min_n"
 
 
 def test_ticket_on_the_planned_bus_uses_its_live_eta():
@@ -316,12 +324,28 @@ def test_ticket_on_a_vehicle_off_the_plan_covers_the_end_of_the_line():
     assert wallet.trip_minutes(Session(), "HG935") == end_of_line
 
 
-def test_explicit_short_ticket_is_flagged():
+def _prepare_on_planned_bus(ticket_id: str) -> dict:
     s = _plan_agh()
-    rt.reset_clock(11)  # on the planned bus
+    rt.reset_clock(11)  # on the planned bus, ~32 min to AGH
     bus = s.plan["legs"][-1]["vehicle"]["side_number"]
-    prep = tools.execute(s, "prepare_ticket", {"ticket_id": "kmk_15min_n", "side_number": bus}).result
-    assert prep["ticket_id"] == "kmk_15min_n" and prep["covers_trip"] is False
+    return tools.execute(s, "prepare_ticket", {"ticket_id": ticket_id, "side_number": bus}).result
+
+
+def test_explicit_short_ticket_is_upgraded():
+    """The user asks for a 15-minute ticket on a longer ride: they are offered (and must confirm) one that lasts it."""
+    prep = _prepare_on_planned_bus("kmk_15min_n")
+    assert prep["ticket_id"] == wallet.pick_ticket(prep["trip_min"])["id"] != "kmk_15min_n"
+    assert prep["ticket"]["valid_min"] >= prep["trip_min"] + wallet.TICKET_MARGIN_MIN and prep["covers_trip"]
+    assert prep["ticket"]["name_pl"] in prep["confirmation_text"]
+
+
+def test_explicit_short_reduced_ticket_stays_reduced():
+    prep = _prepare_on_planned_bus("kmk_15min_u")
+    assert prep["ticket_id"] == wallet.pick_ticket(prep["trip_min"], "reduced")["id"] == "kmk_60min_u"
+
+
+def test_explicit_long_ticket_is_kept():
+    assert _prepare_on_planned_bus("kmk_90min_n")["ticket_id"] == "kmk_90min_n"
 
 
 def test_rule_agent_offers_the_ticket_it_will_buy():
@@ -390,6 +414,32 @@ def test_websocket_survives_bad_messages():
         assert _until_idle(ws)[0]["type"] == "error"
         ws.send_json({"type": "text", "text": "Jak dojadę na Rynek?"})  # connection still works
         assert any(m["type"] == "reply_text" and "Na miejscu o" in m["text"] for m in _until_idle(ws))
+
+
+def test_ticket_to_the_stop_the_user_named():
+    """"Kup bilet z Alei Pokoju do Ronda Mogilskiego" on DE777, no route planned: to Rondo Mogilskie, not the end of 124."""
+    rt.reset_clock(11)
+    s = Session()
+    prep = tools.execute(s, "prepare_ticket", {"side_number": "DE777", "get_off": "rondo mogilskie"}).result
+    assert prep["trip_min"] < 20 and prep["ticket_id"] == "kmk_30min_n"
+    assert tools.execute(s, "prepare_ticket", {"side_number": "DE777"}).result["ticket_id"] == "kmk_60min_n"
+    err = tools.execute(s, "prepare_ticket", {"side_number": "DE777", "get_off": "Salwator"}).result
+    assert err["error"] == "unknown_stop" and "Rondo Mogilskie" in err["message"]
+
+
+def test_route_picked_on_screen_sizes_the_voice_ticket():
+    """Expo: route tab (REST /route) Al. Pokoju -> Rondo Mogilskie, then "kup bilet" by voice on DE777.
+    The plan must reach the voice session: 20 min ride -> 30 min ticket, not 60 to the end of line 124."""
+    rt.reset_clock(0)
+    with client.websocket_connect("/ws/voice") as ws:
+        sid = _until_idle(ws)[0]["id"]
+        r = client.post("/route", json={"destination": "rondo mogilskie", "session_id": sid}).json()
+        assert r["best"]["legs"][1]["vehicle"]["side_number"] == "DE777"
+        rt.reset_clock(11)
+        assert client.post("/demo/gps", json={"side_number": "DE777"}).status_code == 200
+        ws.send_json({"type": "text", "text": "kup bilet"})
+        spoken = [m["text"] for m in _until_idle(ws) if m["type"] == "reply_text"]
+        assert "30-minutowy" in spoken[-1] and "D E 7 7 7" in spoken[-1]
 
 
 def test_demo_reset_clears_open_websocket():
@@ -507,9 +557,9 @@ def test_long_llm_reply_does_not_eat_the_confirmation_time(monkeypatch):
         await conv.handle_utterance("kup bilet")
         s = conv.session
         spoken = [m["text"] for m in sent if m["type"] == "reply_text"]
-        assert spoken == [s.pending and next(m for m in sent if m["type"] == "pending_confirmation")
-                          ["data"]["confirmation_text"]]
-        assert "HG935" in spoken[0] and "Potwierdzasz?" in spoken[0]
+        assert spoken == [speech.spell_side_numbers(next(m for m in sent if m["type"] == "pending_confirmation")
+                                                    ["data"]["confirmation_text"])]
+        assert "H G 9 3 5" in spoken[0] and "Potwierdzasz?" in spoken[0]
         assert s.pending.created_at > time.time()          # window starts after the question
         assert not s.pending.hard_expired()
         conv.close()

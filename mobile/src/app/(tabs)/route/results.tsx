@@ -11,12 +11,12 @@ import { Button, Card, T } from "@/components/ui";
 import { space } from "@/theme";
 
 export default function RouteResults() {
-  const { ui, backendUrl, setRouteResult } = useAgent();
+  const { ui, backendUrl, setRouteResult, sessionId } = useAgent();
   const r = ui.route_results;
 
   const pick = async (option: string) => {
     try {
-      setRouteResult(await api.route(backendUrl, option.toLowerCase()));
+      setRouteResult(await api.route(backendUrl, option.toLowerCase(), undefined, sessionId));
     } catch {}
   };
 

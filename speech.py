@@ -17,9 +17,17 @@ Env (see .env.example):
 """
 
 import os
+import re
 from typing import AsyncIterator
 
 import httpx
+
+_SIDE_NUMBER = re.compile(r"\b([A-Z])[\s-]?([A-Z])[\s-]?(\d)[\s-]?(\d)[\s-]?(\d)\b")
+
+
+def spell_side_numbers(text: str) -> str:
+    """Vehicle side numbers are spoken one character at a time: HG935 / "HG 935" -> "H G 9 3 5"."""
+    return _SIDE_NUMBER.sub(lambda m: " ".join(m.groups()), text)
 
 TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
 CHUNK_BYTES = 16_000  # ~1 s of 128 kbps mp3 per WebSocket message

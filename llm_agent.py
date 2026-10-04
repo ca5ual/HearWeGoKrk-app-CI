@@ -20,28 +20,38 @@ import os
 
 import anthropic
 
+import speech
 import tools
 
 MODEL = os.environ.get("AGENT_MODEL", "claude-opus-5-5")
 EFFORT = os.environ.get("AGENT_EFFORT", "low")
-MAX_TOOL_ROUNDS = 6       # a turn needs at most ~3 (e.g. match vehicle -> prepare ticket)
-MAX_HISTORY_MESSAGES = 80  # start a fresh conversation after this (history is append-only)
+MAX_TOOL_ROUNDS = 6  # a turn needs at most ~3 (e.g. match vehicle -> prepare ticket)
+MAX_HISTORY_MESSAGES = (
+    80  # start a fresh conversation after this (history is append-only)
+)
 
 # Server-side refusal fallback: if a safety classifier declines, the API re-runs the request
 # on Anthropic's recommended fallback model inside the same call.
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 SYSTEM_PROMPT = """\
-You are HearWeGoKrk, a voice assistant for blind and visually impaired people using public \
+You are HearWeGoKrk, a voice assistant for blind and visually impaired people, people with other disabilities, old people or potentially 
+ordinary insterested people using public \
 transport in Kraków. Everything you write is read aloud by text-to-speech and shown in large \
 type for a sighted companion.
 
+Transparency requirement (AI Act):
+- If you are greeting the user or starting a new conversation, explicitly state that you are \
+an artificial intelligence (e.g., "Jestem asystentem AI HearWeGoKrk"). You only need to say this once per session.
+
 How to answer:
-- Answer in the language the user spoke (Polish or English). Default to Polish.
+- Answer in Polish.
 - Be short: one to three sentences. Put the most important facts first: line, how many \
 minutes, and whether the vehicle is low-floor.
-- Write for the ear: no markdown, lists, emoji or abbreviations. Write times as 16:25 and \
-vehicle side numbers exactly as the tools give them.
+- Write for the ear: no markdown, lists, emoji or abbreviations. Write times as 16:25.
+- Always spell out vehicle side numbers (numer boczny), one character at a time separated by \
+spaces: "H G 9 3 5", never "HG935", "HG 935" or "dziewięćset trzydzieści pięć". This applies \
+everywhere, also inside confirmation_text, which you otherwise read word for word.
 - Use only facts from tool results. Never invent departures, delays, prices or vehicles. If a \
 tool returns an error, say plainly what failed and what the user can do.
 - Say "według danych na żywo" / "according to live data" when data_source is live or \
@@ -64,15 +74,11 @@ purchase ("tak", "potwierdzam", "yes"). Anything unclear: ask again. Silence is 
 immediately and say what was cancelled.
 - If get_balance returns speak_amount_aloud false, do not say the amount. Ask whether to say \
 it aloud, because the user has no headphones.
-- Ticket length: call prepare_ticket without ticket_id, so the backend picks a ticket valid for \
-the whole ride. Pass fare "reduced" only if the user says they have a discount (ulga). Pass a \
-ticket_id only if the user asks for a specific ticket; if covers_trip is false, say it ends \
-before the ride does.
+- Default ticket: kmk_15min_n (15-minute, full fare), unless the user asks for another.
 
 Each user message starts with a [kontekst: ...] note from the app (headphones, current \
 vehicle, pending purchase). It is app state, not something the user said.
 """
-
 _client: anthropic.AsyncAnthropic | None = None
 
 
@@ -97,17 +103,32 @@ def _context_note(session) -> str:
 
 def _after_failure(session, outcomes) -> str:
     """Say what was already done when the API fails mid-turn."""
-    bought = next((o.result for o in outcomes
-                   if o.name == "confirm_pending_action" and o.result.get("status") == "purchased"), None)
+    bought = next(
+        (
+            o.result
+            for o in outcomes
+            if o.name == "confirm_pending_action"
+            and o.result.get("status") == "purchased"
+        ),
+        None,
+    )
     if bought:
         until = bought["ticket"]["valid_until"][11:16]
-        return session.t(f"Kupione. Bilet ważny do {until}. Mam problem z połączeniem, resztę powtórz proszę.",
-                         f"Done, ticket valid until {until}. I have a connection problem, please repeat the rest.")
-    return session.t("Mam problem z połączeniem. Powtórz proszę.", "I have a connection problem. Please repeat.")
+        return session.t(
+            f"Kupione. Bilet ważny do {until}. Mam problem z połączeniem, resztę powtórz proszę.",
+            f"Done, ticket valid until {until}. I have a connection problem, please repeat the rest.",
+        )
+    return session.t(
+        "Mam problem z połączeniem. Powtórz proszę.",
+        "I have a connection problem. Please repeat.",
+    )
 
 
 def _text_of(content) -> str:
-    return " ".join(b.text.strip() for b in content if b.type == "text" and b.text.strip())
+    text = " ".join(
+        b.text.strip() for b in content if b.type == "text" and b.text.strip()
+    )
+    return speech.spell_side_numbers(text)  # in case the model ignored the prompt rule
 
 
 async def respond(session, text: str):
@@ -116,7 +137,9 @@ async def respond(session, text: str):
     if len(session.history) > MAX_HISTORY_MESSAGES:
         session.history.clear()  # new conversation; never edit old turns (thinking blocks are bound to them)
 
-    session.history.append({"role": "user", "content": f"{_context_note(session)}\n{text}"})
+    session.history.append(
+        {"role": "user", "content": f"{_context_note(session)}\n{text}"}
+    )
     outcomes: list[tools.ToolOutcome] = []
 
     for _ in range(MAX_TOOL_ROUNDS):
@@ -128,7 +151,9 @@ async def respond(session, text: str):
                 tools=tools.tool_schemas_anthropic(),
                 messages=session.history,
                 output_config={"effort": EFFORT},
-                cache_control={"type": "ephemeral"},  # system + tools + history prefix is reused every round
+                cache_control={
+                    "type": "ephemeral"
+                },  # system + tools + history prefix is reused every round
                 betas=[FALLBACK_BETA],
                 fallbacks="default",
             )
@@ -141,15 +166,20 @@ async def respond(session, text: str):
         session.history.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "refusal":
-            msg = session.t("Przepraszam, nie mogę w tym pomóc.", "Sorry, I can't help with that.")
+            msg = session.t(
+                "Przepraszam, nie mogę w tym pomóc.", "Sorry, I can't help with that."
+            )
             return AgentReply(msg, outcomes)
 
         calls = [b for b in response.content if b.type == "tool_use"]
         if response.stop_reason != "tool_use" or not calls:
             reply = _text_of(response.content) or session.t(
-                "Przepraszam, nie zrozumiałem. Powtórz proszę.", "Sorry, I didn't get that. Please repeat."
+                "Przepraszam, nie zrozumiałem. Powtórz proszę.",
+                "Sorry, I didn't get that. Please repeat.",
             )
-            session.flags["last_text"] = reply  # for "powtórz" if we fall back to the rule brain
+            session.flags["last_text"] = (
+                reply  # for "powtórz" if we fall back to the rule brain
+            )
             return AgentReply(reply, outcomes)
 
         # Run calls in order (prepare -> confirm ordering matters), return all results in one message.
@@ -158,15 +188,19 @@ async def respond(session, text: str):
             args = call.input if isinstance(call.input, dict) else {}
             outcome = tools.execute(session, call.name, args)
             outcomes.append(outcome)
-            results.append({
-                "type": "tool_result",
-                "tool_use_id": call.id,
-                "content": json.dumps(outcome.result, ensure_ascii=False),
-                "is_error": "error" in outcome.result,
-            })
+            results.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": call.id,
+                    "content": json.dumps(outcome.result, ensure_ascii=False),
+                    "is_error": "error" in outcome.result,
+                }
+            )
         session.history.append({"role": "user", "content": results})
 
     # Too many rounds: close the turn cleanly so the history stays valid.
-    reply = session.t("Przepraszam, to trwa za długo. Spróbuj zapytać prościej.",
-                      "Sorry, that took too long. Please try a simpler question.")
+    reply = session.t(
+        "Przepraszam, to trwa za długo. Spróbuj zapytać prościej.",
+        "Sorry, that took too long. Please try a simpler question.",
+    )
     return AgentReply(reply, outcomes)

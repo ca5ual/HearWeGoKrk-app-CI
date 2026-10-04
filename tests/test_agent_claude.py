@@ -128,13 +128,15 @@ def test_buy_ticket_over_two_turns():
 
     r1 = run(s, "Kup bilet")
     assert s.pending is not None and s.current_vehicle == "HG935"
+    ticket = s.pending.params["ticket"]  # 15 min is too short for HG935's ride: upgraded
+    assert ticket["id"] == "kmk_30min_n"
     assert [b["tool_use_id"] for b in tool_results(fake.requests[1])] == ["a", "b"]
     assert wallet.get_balance(Session())["balance_pln"] == before  # nothing paid yet
     assert any(o.pending for o in r1.outcomes)
 
     r2 = run(s, "tak")
     assert r2.text == "Kupione." and s.pending is None
-    assert wallet.get_balance(Session())["balance_pln"] == round(before - 4.0, 2)
+    assert wallet.get_balance(Session())["balance_pln"] == round(before - ticket["price_pln"], 2)
     assert "oczekujący zakup: pa_" in fake.requests[2]["messages"][-1]["content"]
 
 
@@ -333,3 +335,9 @@ def test_websocket_voice_turn_end_to_end(monkeypatch):
     assert {"type": "transcript", "text": "Jak dojadę na Rynek?"} in msgs
     assert any(m["type"] == "reply_text" and "Na miejscu o" in m["text"] for m in msgs)
     assert any(m["type"] == "audio_chunk" for m in msgs)
+
+
+def test_side_numbers_are_spelled_out():
+    llm_agent._client = FakeClaude(resp(text("Jesteś w HG935, a następny to HG 936. Bilet 15 minut.")))
+    r = run(Session(), "w czym jestem?")
+    assert r.text == "Jesteś w H G 9 3 5, a następny to H G 9 3 6. Bilet 15 minut."

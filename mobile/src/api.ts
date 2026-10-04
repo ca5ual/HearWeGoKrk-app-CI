@@ -14,10 +14,11 @@ export const api = {
   stops: (b: string) => req<Stop[]>(b, "/stops"),
   departures: (b: string, stopId: string, limit = 8) =>
     req<Departure[]>(b, `/stops/${encodeURIComponent(stopId)}/departures?limit=${limit}`),
-  route: (b: string, destination: string, preferLowFloor?: boolean) =>
+  // sessionId: the voice session, so a route picked on screen also sizes the ticket bought by voice.
+  route: (b: string, destination: string, preferLowFloor?: boolean, sessionId?: string | null) =>
     req<RouteResult>(b, "/route", {
       method: "POST",
-      body: JSON.stringify({ destination, prefer_low_floor: preferLowFloor }),
+      body: JSON.stringify({ destination, prefer_low_floor: preferLowFloor, session_id: sessionId }),
     }),
   wallet: (b: string) => req<Wallet>(b, "/wallet"),
   demoReset: (b: string, offsetMin = 0) =>

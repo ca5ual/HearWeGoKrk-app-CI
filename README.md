@@ -131,7 +131,7 @@ With a 12-minute offset tram 12 **HG935** is on the road: that's the vehicle the
 after the user leaves their last vehicle (`wallet.trip_minutes`):
 on a vehicle of the planned route, its live ETA to that leg's stop plus the planned legs after it (transfers);
 on any other vehicle, the ride to the end of its line; not on a running vehicle, the planned route.
-With an explicit `ticket_id` that is too short, `covers_trip` is `false` and the agent warns the user.
+An explicit `ticket_id` that is too short is upgraded to that ticket (same fare); the user hears it in the confirmation.
 
 ### 5.2 WebSocket `/ws/voice`
 
