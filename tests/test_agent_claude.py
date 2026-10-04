@@ -128,8 +128,8 @@ def test_buy_ticket_over_two_turns():
 
     r1 = run(s, "Kup bilet")
     assert s.pending is not None and s.current_vehicle == "HG935"
-    ticket = s.pending.params["ticket"]  # 15 min is too short for HG935's ride: upgraded
-    assert ticket["id"] == "kmk_30min_n"
+    ticket = s.pending.params["ticket"]  # no destination said: the ticket the user asked for
+    assert ticket["id"] == "kmk_15min_n"
     assert [b["tool_use_id"] for b in tool_results(fake.requests[1])] == ["a", "b"]
     assert wallet.get_balance(Session())["balance_pln"] == before  # nothing paid yet
     assert any(o.pending for o in r1.outcomes)

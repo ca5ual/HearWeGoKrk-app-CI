@@ -197,7 +197,7 @@ Server → client:
 7. **Uncertainty**: say "według danych na żywo" vs "według rozkładu" based on `data_source`, e.g. when asked "czy się spóźni?".
 8. Never invent departures or prices. If a tool fails, say so.
 9. Answer in the language the user spoke.
-10. **Ticket length**: let the backend pick a ticket that lasts the whole ride; warn if a ticket the user asked for is too short.
+10. **Ticket choice**: never guess. Ask for the fare (normalny / ulgowy) and for how long the ticket should last or where the user is going, whichever they didn't say; then let the backend pick a ticket that lasts the whole ride; warn if a ticket the user asked for is too short.
 11. **AI disclosure**: the server, not the LLM, starts the first voice reply with "Rozmawiasz z asystentem głosowym AI."; the agent doesn't introduce itself again.
 
 ## 7. Demo script (≈90 s)
@@ -209,9 +209,9 @@ Server → client:
    niskopodłogowy. Na miejscu o …" (20 min ride, bus DE777). Ask it **within 5 minutes of the reset**: after that
    the walk to Al. Pokoju misses DE777 and the route changes.
 5. Tryb demo → **Wsiadam do autobusu DE777 (+11 min)** (moves the clock and fake GPS, keeps the conversation) →
-   "Wsiadłem" → "Jesteś w linii 124, pojazd DE777. Kupić bilet 30-minutowy lub na 1 przejazd, normalny?"
-   (19 min left to Rondo Mogilskie + 3 min margin). Without GPS: "Jestem w DE 777".
-6. "Tak" → confirmation with parameters → "Tak" → ticket.
+   "Wsiadłem" → "Jesteś w linii 124, pojazd DE777. Kupić bilet? Bilet normalny czy ulgowy?" (the route
+   already says how long: 19 min left to Rondo Mogilskie + 3 min margin). Without GPS: "Jestem w DE 777".
+6. "Ulgowy" → confirmation with parameters (bilet 30-minutowy ulgowy) → "Tak" → ticket.
 7. Fallback: play the backup video.
 
 Alternative ticket demo without a planned route: Tryb demo → **Wsiadam do HG935 (+12 min)** (this one resets the

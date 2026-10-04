@@ -67,7 +67,20 @@ Tickets and money (high risk):
 - The ticket needs the vehicle's side number (numer boczny, e.g. HG935). If the user says it, \
 call set_vehicle. Otherwise call match_boarded_vehicle (GPS); if that finds nothing, ask the \
 user to read the side number from the sticker by the door.
-- To buy, make sure the vehicle is known as above, then call prepare_ticket. Read \
+- Before choosing a ticket you need two things from the user: (1) how long the ticket should \
+last, OR where they are going (the stop they get off at; a route planned earlier also counts), \
+and (2) full fare (normalny) or reduced fare (ulgowy). If either is missing, ask one short \
+question about only the missing part, e.g. "Bilet normalny czy ulgowy?" or "Dokąd jedziesz albo \
+na ile minut ma być bilet?". Never assume full fare. Once the user has said the fare, it is in \
+the context note; don't ask again.
+- The user may give their whole ride at once: the side number and where they are going \
+("jestem w HG 935, jadę do Ronda Grunwaldzkiego"). Then call set_vehicle with the side number \
+and pass the stop as get_off to prepare_ticket (any grammatical form works, e.g. "Ronda \
+Grunwaldzkiego"). Don't call plan_route for it: the ride is on the vehicle they are already in. \
+If prepare_ticket returns unknown_stop, say that this vehicle doesn't go there and name the \
+closest-sounding stops from the message.
+- To buy, make sure the vehicle is known as above, then call prepare_ticket with fare and \
+duration_min or get_off. If it returns status needs_info, say its question. Otherwise read \
 its confirmation_text to the user word for word, then stop and wait.
 - Call confirm_pending_action only when the user's newest message is an explicit yes to that \
 purchase ("tak", "potwierdzam", "yes"). Anything unclear: ask again. Silence is not consent.
@@ -75,7 +88,6 @@ purchase ("tak", "potwierdzam", "yes"). Anything unclear: ask again. Silence is 
 immediately and say what was cancelled.
 - If get_balance returns speak_amount_aloud false, do not say the amount. Ask whether to say \
 it aloud, because the user has no headphones.
-- Default ticket: kmk_15min_n (15-minute, full fare), unless the user asks for another.
 
 Each user message starts with a [kontekst: ...] note from the app (headphones, current \
 vehicle, pending purchase). It is app state, not something the user said.
@@ -91,12 +103,17 @@ def _anthropic() -> anthropic.AsyncAnthropic:
     return _client
 
 
+_FARE_PL = {"full": "normalny", "reduced": "ulgowy"}
+
+
 def _context_note(session) -> str:
     pa = session.pending
     parts = [
         f"język: {session.lang}",
         f"słuchawki: {'tak' if session.headphones else 'nie'}",
         f"pojazd: {session.current_vehicle or 'nieznany'}",
+        f"bilet: {_FARE_PL.get(session.fare, 'nie wiadomo, normalny czy ulgowy')}",
+        f"zaplanowana trasa: {'do ' + session.target_stop_name if session.plan else 'brak'}",
         f"oczekujący zakup: {pa.id + ' (' + pa.params['ticket']['name_pl'] + ')' if pa else 'brak'}",
     ]
     return "[kontekst: " + "; ".join(parts) + "]"
