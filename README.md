@@ -8,6 +8,12 @@ whether the vehicle is low-floor, buys a ticket that lasts the whole ride, and t
 to get off. Everything it says is also shown on screen in large type, so a sighted companion
 can read along.
 
+<p align="center">
+  <img src="docs/transcript.png" width="250" alt="Tekst rozmowy: the spoken question &quot;Jak dojadę na Rynek?&quot; and the assistant's reply, starting with the AI disclosure">
+  <img src="docs/route-results.png" width="250" alt="Wyniki: the recommended route to Rynek Główny by low-floor tram 12, and an alternative by tram 1">
+  <img src="docs/ticket-confirm.png" width="250" alt="Potwierdź zakup: a 60-minute normalny ticket for vehicle DE777, with a 30-second answer window and Potwierdź / Anuluj buttons">
+</p>
+
 ## What you can say
 
 | You say | HearWeGoKrk |
@@ -51,6 +57,23 @@ Three tabs plus a few extra screens:
 
 The voice is the main interface. Every agent answer that has a screen (a route, departures, the
 trip) is stored there, so you can come back to it later. The app never switches screens on its own.
+
+### Screenshots
+
+| Tekst rozmowy | Trasa | Wyniki |
+|:---:|:---:|:---:|
+| <img src="docs/transcript-route.png" width="250" alt="The end of the spoken reply, with a Powtórz button and the route card below it"> | <img src="docs/route-search.png" width="250" alt="Trasa: destination field, quick picks and the low-floor switch"> | <img src="docs/route-results.png" width="250" alt="Route results to Rynek Główny"> |
+| The reply in large type, with the route card it produced | Destination, quick picks, low-floor vehicles | Recommended route and alternatives, live data |
+
+| Szczegóły trasy | Wsiądź | Rozkłady |
+|:---:|:---:|:---:|
+| <img src="docs/route-details.png" width="250" alt="Route details: summary and step 1, walk 700 m to the stop"> | <img src="docs/route-board.png" width="250" alt="Step 2: board tram 12, vehicle HG920, low-floor, get off at Poczta Główna"> | <img src="docs/departures.png" width="250" alt="Departures from TAURON Arena Kraków Al. Pokoju: tram 1 partly low-floor in 3 min, tram 14 with high steps, delayed by 3 min"> |
+| Step by step: walk, board, get off | Side number, model and low-floor of the vehicle | Live departures; a delay is red *and* spelled out |
+
+| Potwierdź zakup | Pomoc |
+|:---:|:---:|
+| <img src="docs/ticket-confirm.png" width="250" alt="Ticket confirmation sheet"> | <img src="docs/help.png" width="250" alt="Pomoc: how to talk to the assistant, how to cancel a recording, what you can say"> |
+| The price stays hidden until you tap "Pokaż kwotę" | How to talk, cancel and what to say |
 
 ## Accessibility
 
