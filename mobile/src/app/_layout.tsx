@@ -26,7 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings" options={{ title: "Ustawienia", presentation: "modal", headerRight: () => <HelpButton /> }} />
         <Stack.Screen name="help" options={{ title: "Pomoc", presentation: "modal", headerRight: undefined }} />
       </Stack>
-      {/* Every action that costs money goes through this modal (FRONTEND.md 5.7). */}
+      {/* Every action that costs money goes through this modal. */}
       <ConfirmModal />
     </AgentProvider>
   );

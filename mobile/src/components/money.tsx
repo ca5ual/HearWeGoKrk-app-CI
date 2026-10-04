@@ -1,4 +1,4 @@
-// Money-related UI: balance chip (header), TicketFab, the confirmation modal (FRONTEND.md 5.7).
+// Money-related UI: balance chip (header), TicketFab, the confirmation modal.
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { BackHandler, Pressable, StyleSheet, View } from "react-native";

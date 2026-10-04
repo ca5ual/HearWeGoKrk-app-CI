@@ -1,4 +1,4 @@
-// Profile / settings + hidden demo controls (README 5.3: /demo/reset, /demo/clock, /demo/gps).
+// Profile / settings + hidden demo controls (README: Demo mode; /demo/reset, /demo/clock, /demo/gps).
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
 

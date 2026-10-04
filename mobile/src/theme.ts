@@ -1,4 +1,4 @@
-// Design tokens from FRONTEND.md section 2 (dark, high contrast). Ratios checked for WCAG 2.2
+// Design tokens (dark, high contrast). Ratios checked for WCAG 2.2
 // 1.4.3 (text >= 4.5:1) and 1.4.11 (UI parts >= 3:1).
 export const colors = {
   bg: "#0E0E10",          // app background

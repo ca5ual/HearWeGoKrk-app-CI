@@ -32,7 +32,7 @@ class Tool:
     fn: Callable[..., dict]
     description: str
     parameters: dict                 # JSON Schema of the arguments
-    ui_component: str | None = None  # which FRONTEND.md screen renders the result
+    ui_component: str | None = None  # which app screen renders the result (README: WebSocket `ui`)
     ui_key: str | None = None        # render result[ui_key] instead of the whole result
 
 

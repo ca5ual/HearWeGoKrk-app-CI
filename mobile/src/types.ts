@@ -114,7 +114,7 @@ export type Wallet = {
   active_tickets: ActiveTicket[];
 };
 
-// `ui` messages from /ws/voice (FRONTEND.md section 6).
+// `ui` messages from /ws/voice (README: WebSocket /ws/voice).
 export type UiPayload =
   | { component: "route_results"; data: RouteResult }
   | { component: "departures"; data: DeparturesResult }

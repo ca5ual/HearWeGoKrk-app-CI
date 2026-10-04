@@ -1,139 +1,239 @@
-# HearWeGoKrk 🎧🚋
+# HearWeGoKrk
 
-Voice-first public transport assistant for blind and visually impaired people in Kraków.
-One big button (Shazam-style): plan a route, hear live departures, check whether the vehicle
-is low-floor, buy a ticket that lasts the whole ride with the **vehicle side number filled in
-automatically**, and get told when to get off.
+A voice assistant for public transport in Kraków, built for blind and visually impaired people,
+and useful to anyone who would rather ask than read a timetable.
 
-HackYeah 2026 · Smart City category (Bank Pekao).
+You press one big button and speak. HearWeGoKrk plans the route, reads live departures, says
+whether the vehicle is low-floor, buys a ticket that lasts the whole ride, and tells you when
+to get off. Everything it says is also shown on screen in large type, so a sighted companion
+can read along.
 
----
+## What you can say
 
-## 1. Architecture
+| You say | HearWeGoKrk |
+|---|---|
+| "Jak dojadę na Rynek?" | Line, stop, how many minutes, whether the vehicle is low-floor, arrival time |
+| "Kiedy następna czternastka?" | The next tram 14 from the nearest stop that serves it. If it has high steps, it offers to wait for the next low-floor one |
+| "Czy się spóźni?" | The delay, and whether the answer comes from live data or the timetable |
+| "Wsiadłem" / "Jestem w HG 935" | Finds the vehicle you are in by GPS, or by the side number (*numer boczny*) on the sticker by the door |
+| "Kup bilet" | Asks only for what it doesn't know yet (normalny or ulgowy, and how long or where to), reads the ticket back with all its details, and buys it after you say "tak" |
+| "Jestem w HG 935, jadę do Ronda Grunwaldzkiego, kup bilet ulgowy" | The whole ride in one sentence: the ticket covers the live travel time to that stop |
+| "Ile mam pieniędzy?" | The balance. Without headphones it asks before saying amounts aloud |
+| "Powtórz" · "Stop" · "Anuluj" | Repeats the last answer · cancels a pending purchase immediately |
+
+It answers in Polish or English, whichever you speak.
+
+### Buying a ticket
+
+- **The right ticket, not a guess.** The ticket must last until you get off the last vehicle, plus a
+  3-minute margin. The ride length comes from a route you planned earlier, from the stop you named
+  (any grammatical form: "do Ronda Grunwaldzkiego"), or from a duration you said ("na pół godziny").
+  If you ask for a ticket that is too short for a known ride, you are offered the right one.
+- **Validated in your vehicle.** The ticket carries the side number of the vehicle you are in. It is
+  filled in from GPS, or taken from the side number you say.
+- **Nothing is paid without an explicit "tak".** The confirmation names the ticket, the price (only
+  with headphones), how you pay, and the vehicle. Silence is not consent: after 30 seconds the app asks
+  once more, then cancels. "Potrzebuję więcej czasu" restarts the countdown and never confirms.
+
+## The app
+
+Three tabs plus a few extra screens:
+
+| Screen | What it shows |
+|---|---|
+| **Mów** | The talk button fills most of the screen. Hold and speak, or tap to start and tap to send. "Tekst rozmowy" shows the transcript, the reply and the last result; "Powtórz" replays it |
+| **Trasa** | Route search with quick picks (Rynek, AGH, Dworzec Główny, Kampus UJ) and a low-floor option. Results, then the route step by step: walk, board (line, side number, low-floor, where to stand), get off |
+| **Rozkłady** | Departures for the nearest or a chosen stop, filtered by line or tram/bus. Live or timetable, delays in words, refreshed every 30 s (can be paused) |
+| Ticket confirmation | A bottom sheet with the ticket, vehicle, price and payment. Answer by voice (the mic opens by itself after the question) or with Potwierdź / Anuluj |
+| Trip | Line and vehicle, next stop, "Wysiadasz za 2 przystanki", remaining stops. A vibration and an announcement one stop before yours |
+| Ustawienia | Headphones, phone GPS, English, server address, demo mode |
+| Pomoc | How to talk to the assistant, what you can say, tickets, accessibility. The help button is in the same place on every screen |
+
+The voice is the main interface. Every agent answer that has a screen (a route, departures, the
+trip) is stored there, so you can come back to it later. The app never switches screens on its own.
+
+## Accessibility
+
+Target: [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA, applied to a native app.
+
+- Works with TalkBack and VoiceOver. Every card or row is one focusable element with a full-sentence
+  label, e.g. "Autobus 179 w kierunku Dworzec Główny, za 2 minuty, o 15:58, na żywo, niskopodłogowy".
+- Large type that follows the system font size (layouts survive 200%), dark high-contrast theme,
+  touch targets of at least 48×48 dp.
+- Information is never carried by colour alone: a delay is red *and* says "opóźniony o 4 min".
+- Status messages (connection lost, errors, ticket notices) are announced without moving focus.
+
+| Criterion | How the app meets it |
+|---|---|
+| 1.3.4 Orientation | Portrait and landscape both work |
+| 1.4.3 Contrast (Minimum) | Text contrast ≥ 4.5:1 (`theme.ts`) |
+| 1.4.4 Resize Text | System font scaling stays on |
+| 1.4.11 Non-text Contrast | Input outlines, switches and the selected segment ≥ 3:1 |
+| 2.2.1 Timing Adjustable | "Potrzebuję więcej czasu" restarts the purchase confirmation window |
+| 2.2.2 Pause, Stop, Hide | The auto-refreshing departures list can be paused |
+| 2.3.3 Animation from Interactions | The system "remove animations" setting turns off the pulse and slide-ins |
+| 2.5.2 Pointer Cancellation | Sliding off the talk button, or "Anuluj", cancels a recording; nothing is sent |
+| 2.5.7 Dragging Movements | No feature needs dragging |
+| 2.5.8 Target Size (Minimum) | Every control is ≥ 48×48 dp |
+| 3.2.6 Consistent Help | The help button is always the last item in the header |
+| 3.3.4 Error Prevention (Financial) | Every purchase needs the confirmation sheet or a spoken "tak" |
+| 3.3.7 Redundant Entry | Trasa keeps the last destination; Rozkłady keeps the last stop |
+| 3.3.8 Accessible Authentication | No login or password |
+| 4.1.2 Name, Role, Value | Every control has a Polish label and role; icons are hidden from screen readers |
+| 4.1.3 Status Messages | Announced without moving focus (`a11y.ts`) |
+
+Not tested yet: focus visibility with a hardware keyboard (2.4.7, 2.4.11), and the language of
+English replies for screen readers (3.1.2).
+
+**AI disclosure (AI Act).** Every conversation starts with "Rozmawiasz z asystentem głosowym AI."
+The server adds it, so it does not depend on the language model.
+
+## How it works
 
 ```
 React Native (Expo)  ──audio + GPS──▶  FastAPI  ──▶  ElevenLabs Scribe (speech → text)
         ▲                                  │
         │                                  ▼
         │                  Claude tool calling (llm_agent.py)
-        │                  └─ falls back to the rule-based brain (agent.py)
+        │                  └─ falls back to the rule-based agent (agent.py)
         │                                  │
-        │                    tools ──▶ mock_realtime.py (or live GTFS-RT / TTSS)
-        │                                  │         wallet / tickets (mock)
+        │                    tools ──▶ transit data (mock_realtime.py)
+        │                                  │         wallet and tickets (wallet.py)
         │                                  ▼
-        └──────audio + text + haptic──  ElevenLabs (text → speech)
+        └──────audio + text + haptics──  ElevenLabs (text → speech)
 ```
 
-- **Speech to text**: ElevenLabs Scribe (`speech.py`). It accepts the AAC audio Android records, so no GPU or local model is needed.
-- **Agent**: with `AGENT=claude`, Claude calls the tools (`llm_agent.py`). If the API call fails (no Wi-Fi on stage, rate limit), the rule-based brain in `agent.py` answers instead and handles the whole demo script on its own. Without `AGENT`, only the rule-based brain runs.
-- **Text to speech**: ElevenLabs streams the spoken reply in Polish or English. Without a key, the phone speaks `reply_text` with its own voice.
-- Every agent reply is sent as **audio + text** (text shown on screen for a sighted companion, and available for "powtórz / repeat").
-- Money safety lives in `wallet.py`, not in the prompt: no money moves in `prepare_ticket`, confirm is refused in the same turn, and a pending purchase hard-expires.
+- **Speech to text**: ElevenLabs Scribe. It accepts both the PCM audio iOS records and the AAC audio
+  Android records.
+- **Agent**: Claude calls the tools in `tools.py`. If the API is unreachable, a rule-based agent answers
+  instead; it covers routes, departures, boarding, tickets, balance and cancelling on its own.
+- **Text to speech**: ElevenLabs streams the reply in Polish or English. Without a key the phone
+  speaks the reply with its own voice.
+- **Money safety lives in code, not in the prompt** (`wallet.py`): preparing a ticket moves no money,
+  a confirmation in the same turn as the preparation is refused, and a pending purchase expires.
 
-## 2. Repo layout
+### Repository
 
 ```
-app.py                FastAPI app: REST endpoints, demo controls
-voice_ws.py           WebSocket: audio in → STT → agent → TTS → audio out, confirmation + trip timers
-agent.py              agent entry point + rule-based fallback brain
-llm_agent.py          Claude tool-calling agent (AGENT=claude)
-tools.py              tool registry: thin wrappers around mock_realtime + wallet
-wallet.py             mock wallet, ticket choice by ride length, purchase state machine
-session.py            per-conversation state
-speech.py             ElevenLabs speech-to-text and text-to-speech
-mock/                 JSON files + mock_realtime.py (section 3)
-scripts/              TTSS snapshot, agent comparison on the golden set
+app.py            FastAPI app: REST endpoints, demo controls
+voice_ws.py       WebSocket: audio in → speech to text → agent → text to speech; confirmation and trip timers
+llm_agent.py      Claude tool-calling agent
+agent.py          agent entry point and the rule-based agent
+tools.py          the tools the agent can call
+wallet.py         wallet, ticket choice by ride length, purchase state machine
+session.py        per-conversation state
+speech.py         ElevenLabs speech to text and text to speech
+mock/             transit data and the real-time simulator
+scripts/          agent evaluation, TTSS snapshot
 tests/
 mobile/src/
-  app/                screens (expo-router): Mów, Trasa, Rozkłady, trip, settings, help
-  agent/              AgentContext (WebSocket + state), audio.ts, location.ts
-  components/         route cards, departures, confirmation sheet, talk button
+  app/            screens (expo-router)
+  agent/          AgentContext (WebSocket and state), audio, location
+  components/     route cards, departures, confirmation sheet, talk button
 ```
 
-## 3. Running
+## Running it
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env          # fill in ANTHROPIC_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID
+cp .env.example .env          # ANTHROPIC_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID
 .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --env-file .env
 
 cd mobile && npm install && npx expo start   # scan the QR code with Expo Go
 ```
 
-- The phone must be on the same Wi-Fi as the laptop. The app connects to `http://<laptop-ip>:8000`
-  by default (the host running `expo start`); change it in Ustawienia or with `EXPO_PUBLIC_BACKEND_URL` in `mobile/.env`.
-- `GET /health` shows whether the LLM, STT and TTS are configured (`llm`, `stt`, `tts`).
-- Interactive API docs: `http://localhost:8000/docs`.
+- The phone and the computer must be on the same network. The app connects to
+  `http://<computer-ip>:8000` by default; change it in Ustawienia → Serwer or with
+  `EXPO_PUBLIC_BACKEND_URL` in `mobile/.env`.
+- `GET /health` shows whether the language model, speech to text and text to speech are configured.
+  API docs: `http://localhost:8000/docs`.
+- Without `ANTHROPIC_API_KEY` (or with `AGENT` empty) only the rule-based agent runs. Without
+  `ELEVENLABS_API_KEY` there is no voice input, and the phone speaks with its own voice.
 
-### Tests
+| Variable | Default | Purpose |
+|---|---|---|
+| `AGENT` | – | `claude` turns on the Claude agent |
+| `ANTHROPIC_API_KEY` | – | Claude API key |
+| `AGENT_MODEL` / `AGENT_EFFORT` | `claude-opus-5-5` / `low` | Model and effort for the agent |
+| `ELEVENLABS_API_KEY` | – | Needs both Speech to Text and Text to Speech access |
+| `ELEVENLABS_VOICE_ID` | – | A voice that speaks Polish |
+| `ELEVENLABS_STT_MODEL` / `ELEVENLABS_MODEL` / `ELEVENLABS_FORMAT` | `scribe_v2` / `eleven_flash_v2_5` / `mp3_44100_128` | Speech models and audio format |
+
+### Tests and evaluation
 
 ```bash
-.venv/bin/python -m pytest -q                              # backend, free (Claude and ElevenLabs are faked)
-.venv/bin/python scripts/compare_agents.py                 # golden set, rule-based brain (free)
-.venv/bin/python scripts/compare_agents.py rules claude    # same set with Claude (needs ANTHROPIC_API_KEY, costs money)
+.venv/bin/python -m pytest -q                              # backend; Claude and ElevenLabs are faked
+.venv/bin/python scripts/compare_agents.py rules claude    # golden set (mock/demo_scenarios.json)
+.venv/bin/python scripts/ticket_loop.py rules claude -n 2  # a simulated passenger buys tickets
 cd mobile && npx tsc --noEmit && npx expo lint
 ```
 
-## 4. Mock data (`mock/`)
+`compare_agents.py` runs the 12 typical, hard and high-risk cases from `mock/demo_scenarios.json`
+and checks the tools called, the safety rules and latency. In `ticket_loop.py`, Claude plays a
+passenger who knows their vehicle, destination or ticket length, and fare, and reveals them only
+when asked. The script checks that the agent prepares exactly the right ticket and that no money
+moves before "tak". Both scripts call the Claude API when given `claude`.
+
+## Data
+
+Transit data is simulated (`mock/`), based on a real snapshot of Kraków's TTSS (the system behind
+ttss.pl). Departures count down, vehicles move along their lines, and delays appear.
 
 | File | Contents |
 |---|---|
-| `ttss_snapshot.json` | Raw extract from Kraków TTSS (api.ttss.pl, the backend of beta.ttss.pl): vehicles and real trips |
-| `stops.json` | Real stop names, order and platform coordinates from TTSS; step-free / tactile / voice-board flags (hand-made, `null` = unknown) |
-| `lines_and_vehicles.json` | Trams 1, 12, 14 and buses 124, 424 from TAURON Arena with stop order and travel times; vehicles with side number (*numer boczny*, e.g. `HG935`), model, `low_floor` (full/partial/none), air-con, and `source` (`ttss` or `illustrative`) |
-| `routes.json` | Route templates from the venue, destination aliases, ambiguous aliases ("rondo") |
-| `account_and_tickets.json` | Demo persona, wallet, mock card, ticket catalog (15, 30, 60 and 90 min, full and reduced fare), confirmation templates |
-| `demo_scenarios.json` | 12-case golden set: typical / hard / high-risk |
-| `mock_realtime.py` | Simulator: departures count down, vehicles move, delays appear |
+| `ttss_snapshot.json` | Raw TTSS extract: vehicles and real trips |
+| `stops.json` | Stop names, order and coordinates from TTSS; step-free, tactile and voice-board flags (`null` = unknown) |
+| `lines_and_vehicles.json` | Trams 1, 12, 14 and buses 124, 424 from TAURON Arena: stop order, travel times, and vehicles with side number, model, low-floor (full / partial / none) and source (`ttss` or `illustrative`) |
+| `routes.json` | Route templates from TAURON Arena, destination aliases, ambiguous names ("rondo") |
+| `account_and_tickets.json` | User profile, wallet, card, ticket catalog (15, 30, 60, 90 min, normalny and ulgowy), confirmation phrases |
+| `demo_scenarios.json` | The golden set used by `compare_agents.py` |
+| `mock_realtime.py` | The simulator |
 
-Smoke test: `.venv/bin/python -m mock.mock_realtime`
+`scripts/ttss_snapshot.py` refreshes the snapshot from live TTSS. It does not know the hand-added
+data (bus 424 and its fleet, bus DE777, the extra bus 124 stops, new stops in `stops.json`) and
+would drop it; `tests/test_backend.py::test_mock_data_is_consistent` catches broken references.
+Vehicles marked `illustrative` (e.g. the high-floor tram RZ105) are not in the live fleet.
 
-Refresh from live TTSS (run while trams are running): `.venv/bin/python scripts/ttss_snapshot.py`.
-It rewrites `ttss_snapshot.json`, `stops.json` and `lines_and_vehicles.json`; headways, delays,
-boarding hints and the demo vehicle order are set at the top of the script.
+### Demo mode
 
-⚠️ **Hand-added data the script does not know about** and would drop: bus 424 and its vehicles
-(DE630, DE631, BH085, DN001), the demo bus **DE777** (first in the bus 124 rotation), the extra bus 124
-stops (TAURON Arena Kraków, Wieczysta, Brodowicza, Narzymskiego) with their travel times, and the new
-stops in `stops.json`. Rondo Mogilskie in `routes.json` has bus 124 itineraries only (demo). Don't run the script
-before the demo, or re-apply these edits after it. `tests/test_backend.py::test_mock_data_is_consistent`
-catches broken references after any edit.
+Ustawienia → Tryb demo controls the simulation, so the app can be shown without riding a tram:
 
-**Before the demo, call `POST /demo/reset`** (or Ustawienia → Tryb demo → Reset demo): the first tram 14 is then
-the high-floor RZ105 running 3 min late, and the next one (HY712) is low-floor. That is scenario S5. RZ105 is not
-from TTSS (`"source": "illustrative"`): Kraków's live fleet no longer has fully high-floor trams. The bus 424 fleet
-and the demo bus DE777 are illustrative too; every vehicle marked `ttss` is in `ttss_snapshot.json` (a test checks it).
-The first bus 124 after a reset is **DE777**: it leaves Al. Pokoju at minute 10 and reaches Rondo Mogilskie 20 min later.
-With a 12-minute offset tram 12 **HG935** is on the road: that's the vehicle the ticket demo boards.
+- **Reset demo (start)**: restarts the clock and the wallet. The first tram 14 is then the high-floor
+  RZ105, 3 minutes late, and the next one (HY712) is low-floor.
+- **Wsiadam do autobusu DE777 (+11 min)**: moves the clock forward and puts the phone in bus 124
+  DE777, keeping the conversation. Ask "Jak dojadę na Rondo Mogilskie?" within 5 minutes of the reset
+  to get DE777 as the planned bus; after boarding, the ticket covers the 19 minutes left to Rondo Mogilskie.
+- **Wsiadam do HG935 (+12 min)**: puts the phone in tram 12 HG935, with a fresh conversation.
+- **Wyczyść sztuczny GPS**: back to the phone's real position.
 
-⚠️ Ticket prices are placeholders (check ztp.krakow.pl).
+A short walkthrough: "Jak dojadę na Rynek?" → "Kiedy następna czternastka?" (high-step warning and an
+offer to wait) → "Jak dojadę na Rondo Mogilskie?" → Wsiadam do autobusu DE777 → "Wsiadłem" →
+"Bilet normalny czy ulgowy?" → "Ulgowy" → confirmation → "Tak".
 
-## 5. Contracts
+## Reference
 
-### 5.1 Agent tools (`tools.py`)
+### Agent tools (`tools.py`)
 
-| Tool | Args | Returns |
+| Tool | Arguments | Returns |
 |---|---|---|
-| `plan_route` | `destination`, `prefer_low_floor?` (default: user profile) | `status` ok / ambiguous / not_found / no_route, `best`, `alternatives`, `data_source`. Remembers the stop to get off at and the legs to ride (ticket length) |
-| `get_departures` | `stop_id?`, `line_id?`, `mode?` (`tram` / `bus`), `low_floor_only?`, `limit?` | `stop_id`, `stop_name`, `departures` with `eta_min`, `delay_min`, `data_source`, `vehicle`. Without `stop_id`: the nearest stop served by `line_id` / `mode` (tram 12 leaves from Wieczysta, not the nearest stop), else the nearest stop |
-| `match_boarded_vehicle` | `line_id?` (position from GPS) | `matched`, vehicle, `trip`; sets the side number for the ticket |
-| `set_vehicle` | `side_number` (as spoken: "HG 935", "935") | vehicle + `trip`; sets the side number for the ticket |
+| `plan_route` | `destination`, `prefer_low_floor?` (default: user profile) | `status` (ok / ambiguous / not_found / no_route), `best`, `alternatives`, `data_source`. Remembers where to get off and the legs to ride |
+| `get_departures` | `stop_id?`, `line_id?`, `mode?` (`tram` / `bus`), `low_floor_only?`, `limit?` | `stop_name` and `departures` with `eta_min`, `delay_min`, `data_source`, `vehicle`. Without `stop_id`: the nearest stop served by that line or mode |
+| `match_boarded_vehicle` | `line_id?` (position from GPS) | `matched`, vehicle, `trip`. Sets the vehicle for the ticket |
+| `set_vehicle` | `side_number` as spoken ("HG 935", "935") | vehicle and `trip`. Sets the vehicle for the ticket |
 | `vehicle_status` | `side_number?` (default: current vehicle) | position, remaining stops with ETA |
 | `list_tickets` | `fare?` (`full` / `reduced`) | ticket catalog |
-| `get_balance` | – | `balance_pln`, `balance_text`, default card, `speak_amount_aloud`, active tickets |
-| `prepare_ticket` | `ticket_id?`, `side_number?`, `fare?` | `pending_action_id`, `confirmation_text`, `ticket_id`, `trip_min`, `covers_trip` (no money moves) |
-| `confirm_pending_action` | `pending_action_id` | bought ticket, new balance |
+| `get_balance` | – | balance, default card, `speak_amount_aloud`, active tickets |
+| `prepare_ticket` | `fare?`, `duration_min?`, `get_off?`, `ticket_id?`, `side_number?` | `status: needs_info` with a `question`, or `pending_action_id`, `confirmation_text`, `ticket_id`, `trip_min`, `covers_trip`. No money moves |
+| `confirm_pending_action` | `pending_action_id` | the bought ticket, new balance |
 | `cancel_pending_action` | – | what was cancelled |
 
-`prepare_ticket` and `confirm_pending_action` must never happen in the same turn.
+`prepare_ticket` needs the fare and how long the ticket should last: `duration_min`, the `get_off`
+stop, or a planned route. Without them it returns a question and prepares nothing. The ride length
+(`wallet.trip_minutes`) is the vehicle's live ETA to the stop where the user gets off, plus any
+planned legs after it (transfers); before boarding, the planned ride from the first vehicle.
+`prepare_ticket` and `confirm_pending_action` are never accepted in the same turn.
 
-**Ticket length.** Without `ticket_id`, `prepare_ticket` picks the shortest ticket still valid 3 minutes
-after the user leaves their last vehicle (`wallet.trip_minutes`):
-on a vehicle of the planned route, its live ETA to that leg's stop plus the planned legs after it (transfers);
-on any other vehicle, the ride to the end of its line; not on a running vehicle, the planned route.
-An explicit `ticket_id` that is too short is upgraded to that ticket (same fare); the user hears it in the confirmation.
-
-### 5.2 WebSocket `/ws/voice`
+### WebSocket `/ws/voice`
 
 Client → server:
 ```json
@@ -145,21 +245,20 @@ Client → server:
 {"type": "extend_pending", "id": "<pending_action_id>"}
 {"type": "listening", "id": "<pending_action_id>"}
 ```
-- `audio_chunk`: iOS sends raw PCM16 16 kHz mono; Android sends AAC in an `.m4a` container (expo-audio can't record PCM there). `speech.py` detects the format.
-- `context`: `gps: false` makes the backend forget the phone's position and plan from the venue.
-- `text`: typed input, for tests and as an accessible alternative to speech.
-- `extend_pending` ("Potrzebuję więcej czasu", WCAG 2.2.1) restarts the confirmation window of the pending purchase. It never confirms anything.
-- `listening`: the phone finished reading the purchase question and opened the mic by itself (hands-free
-  "tak"/"nie"). The silence timer restarts from that moment but keeps its retry count, so silence still
-  ends in one retry and then a cancel. When a turn prepares a purchase, the server speaks only the
-  `confirmation_text` (not the LLM's full answer) and the silence window starts after it has been read out.
+- `audio_chunk`: PCM16 16 kHz mono (iOS) or AAC in `.m4a` (Android); the format is detected.
+- `context`: `gps: false` makes the backend forget the phone's position.
+- `text`: typed input, for tests and as an alternative to speech.
+- `extend_pending`: restarts the confirmation window of a pending purchase. It never confirms.
+- `listening`: the phone has read the purchase question and opened the mic. The silence timer restarts,
+  but silence still ends in one retry and then a cancel. When a turn prepares a purchase, the server
+  speaks only the `confirmation_text`, and the window starts after it has been read out.
 
 Server → client:
 ```json
 {"type": "session", "id": "a1b2c3d4"}
 {"type": "state", "value": "listening | thinking | speaking | idle"}
 {"type": "transcript", "text": "jak dojadę na rynek"}
-{"type": "reply_text", "text": "Tramwaj 1 za 2 minuty..."}
+{"type": "reply_text", "text": "Tramwaj 1 za 2 minuty...", "speak": "optional"}
 {"type": "audio_chunk", "data": "<base64 mp3>"}
 {"type": "haptic", "pattern": "confirm | warning | arrived"}
 {"type": "ui", "component": "route_results | departures | ticket_confirm | trip_live", "data": {}}
@@ -167,57 +266,28 @@ Server → client:
 {"type": "pending_cancelled", "id": "pa_1a2b3c"}
 {"type": "error", "message": "..."}
 ```
+- `reply_text.speak`: only on the first reply, which starts with the AI disclosure; it spells "AI" the way
+  the Polish voice should say it. The phone shows `text` and, without server audio, speaks `speak ?? text`.
+- `ui`: sent after each tool result that has a screen: `route_results` (`plan_route`), `departures`
+  (`get_departures`), `ticket_confirm` (`prepare_ticket`), `trip_live` (`match_boarded_vehicle`,
+  `set_vehicle`, `vehicle_status`, and the trip monitor every ~10 s). Unknown components are ignored.
 
-- `reply_text`: the first reply of every conversation (and the first one after `POST /demo/reset`) starts
-  with the AI disclosure "Rozmawiasz z asystentem głosowym AI." (AI Act). That message also carries an
-  optional `speak` field: the same text as the voice reads it ("…głosowym ej-aj.", so the Polish voice says
-  the English "AI"). The phone shows `text`; when there is no server audio it speaks `speak ?? text`.
-
-### 5.3 REST (debug + demo control)
+### REST
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /health` | clock, and whether LLM / STT / TTS are configured |
-| `GET /stops` · `GET /stops/{id}/departures` · `GET /vehicles/{side}` | raw mock data |
-| `POST /route` · `GET /wallet` · `GET /tickets/catalog` | same data the tools return |
-| `GET /tools/schemas` | tool definitions passed to Claude |
-| `POST /agent/text` · `GET /sessions/{id}/log` | talk to the agent without the phone; action log of a session |
-| `POST /demo/reset` (`offset_min`) | restart clock and wallet, clear fake GPS, reset open WebSocket sessions |
-| `POST /demo/clock` (`offset_min`) | jump the clock forward only; conversations, planned route and wallet stay |
-| `POST /demo/gps` (`side_number` or `lat`+`lon`) · `DELETE /demo/gps` | fake GPS for the stage |
+| `GET /health` | clock, and whether the language model, speech to text and text to speech are configured |
+| `GET /stops` · `GET /stops/{id}/departures` · `GET /vehicles/{side}` | transit data |
+| `POST /route` · `GET /wallet` · `GET /tickets/catalog` | the same data the tools return |
+| `GET /tools/schemas` | tool definitions given to Claude |
+| `POST /agent/text` · `GET /sessions/{id}/log` | talk to the agent without the phone; a session's action log |
+| `POST /demo/reset` (`offset_min`) | restart the clock and wallet, clear the simulated GPS, reset open conversations |
+| `POST /demo/clock` (`offset_min`) | move the clock forward; conversations, planned route and wallet stay |
+| `POST /demo/gps` (`side_number`, or `lat` + `lon`) · `DELETE /demo/gps` | simulated GPS |
 
-## 6. Agent behaviour rules (in the system prompt and the rule-based brain)
+## Limitations
 
-1. Short answers, the most important information first: line, ETA, low-floor yes/no.
-2. **Confirm with parameters**: ticket name, price (only if private), card, side number. Never a bare "confirm?".
-3. **Silence is not consent**: after `timeout_s`, ask once more, then cancel.
-4. **"Stop" / "anuluj" / "cancel"** cancels any pending action immediately.
-5. **Repair only the unclear part**: an ambiguous destination gets one question listing the options.
-6. **Privacy**: without headphones, ask before saying amounts aloud.
-7. **Uncertainty**: say "według danych na żywo" vs "według rozkładu" based on `data_source`, e.g. when asked "czy się spóźni?".
-8. Never invent departures or prices. If a tool fails, say so.
-9. Answer in the language the user spoke.
-10. **Ticket choice**: never guess. Ask for the fare (normalny / ulgowy) and for how long the ticket should last or where the user is going, whichever they didn't say; then let the backend pick a ticket that lasts the whole ride; warn if a ticket the user asked for is too short.
-11. **AI disclosure**: the server, not the LLM, starts the first voice reply with "Rozmawiasz z asystentem głosowym AI."; the agent doesn't introduce itself again.
-
-## 7. Demo script (≈90 s)
-
-1. Ustawienia → Tryb demo → **Reset demo (start)**. Phone is mirrored and the screen reader is on.
-2. "Jak dojadę na Rynek?" → route, ETA, low-floor.
-3. "Kiedy następna czternastka?" → high-floor warning, then an offer to wait for the next low-floor one.
-4. "Jak dojadę na Rondo Mogilskie?" → "Autobus 124 z przystanku TAURON Arena Kraków Al. Pokoju za … minut, …,
-   niskopodłogowy. Na miejscu o …" (20 min ride, bus DE777). Ask it **within 5 minutes of the reset**: after that
-   the walk to Al. Pokoju misses DE777 and the route changes.
-5. Tryb demo → **Wsiadam do autobusu DE777 (+11 min)** (moves the clock and fake GPS, keeps the conversation) →
-   "Wsiadłem" → "Jesteś w linii 124, pojazd DE777. Kupić bilet? Bilet normalny czy ulgowy?" (the route
-   already says how long: 19 min left to Rondo Mogilskie + 3 min margin). Without GPS: "Jestem w DE 777".
-6. "Ulgowy" → confirmation with parameters (bilet 30-minutowy ulgowy) → "Tak" → ticket.
-7. Fallback: play the backup video.
-
-Alternative ticket demo without a planned route: Tryb demo → **Wsiadam do HG935 (+12 min)** (this one resets the
-conversation) → "Wsiadłem" → a 30-minute ticket for the 27 min to the end of line 12.
-
-## 8. Known issues
-
-- Ticket prices in the catalog are placeholders.
-- `scripts/ttss_snapshot.py` drops the hand-added bus data (section 4).
+- Transit data is simulated from a TTSS snapshot; connecting live TTSS / GTFS-Realtime is the next step.
+- The wallet, card and purchases are simulated. Ticket prices are placeholders (reduced fares from
+  public sources, full fares assumed to be double); check them at ztp.krakow.pl.
+- Routes are planned from TAURON Arena to a fixed set of destinations.
