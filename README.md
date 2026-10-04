@@ -3,7 +3,7 @@
 A voice assistant for public transport in Kraków, built for blind and visually impaired people,
 and useful to anyone who would rather ask than read a timetable.
 
-You press one big button and speak. HearWeGoKrk plans the route, reads live departures, says
+You press one big button and speak. HearWeGoKrk guides you to the transit stop, plans the route, reads live departures, says
 whether the vehicle is low-floor, buys a ticket that lasts the whole ride, and tells you when
 to get off. Everything it says is also shown on screen in large type, so a sighted companion
 can read along.
