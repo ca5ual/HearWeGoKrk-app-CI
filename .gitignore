@@ -9,3 +9,4 @@ __pycache__/
 
 # compare_agents.py output
 scripts/compare_results.json
+scripts/ticket_loop_results.json

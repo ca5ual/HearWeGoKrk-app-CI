@@ -14,6 +14,7 @@ Safety rules enforced HERE, not only in the prompt (an LLM can be talked into an
 
 import copy
 import json
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -98,6 +99,34 @@ def _leg_min(leg: dict) -> int:
     return leg["minutes"] if leg["type"] == "walk" else leg["wait_min"] + leg["ride_min"]
 
 
+def _words(text: str) -> list[str]:
+    return re.findall(r"\w+", text.casefold())
+
+
+def _same_word(stop_word: str, said: str) -> bool:
+    """Polish inflection: "Ronda" is "Rondo", "Dworca" is "Dworzec", "Teatru" is "Teatr"."""
+    if len(stop_word) <= 3 or len(said) <= 3:
+        return stop_word == said
+    n = max(3, min(len(stop_word), len(said)) - 3)
+    return stop_word[:n] == said[:n]
+
+
+def stop_ahead(status: dict, text: str) -> dict | None:
+    """The stop still ahead of the vehicle that `text` names ("do Ronda Grunwaldzkiego", "na AGH"),
+    or None. Most words of the stop's name must be said; a tie ("do Ronda") is None, not a guess."""
+    said = _words(text)
+    scored = []
+    for s in status["remaining_stops"]:
+        words = _words(s["name"])
+        hits = sum(any(_same_word(w, u) for u in said) for w in words)
+        if hits and 2 * hits >= len(words):
+            scored.append((hits, hits / len(words), s))
+    scored.sort(key=lambda x: x[:2], reverse=True)
+    if not scored or (len(scored) > 1 and scored[0][:2] == scored[1][:2]):
+        return None
+    return scored[0][2]
+
+
 def trip_minutes(session, side_number: str | None, get_off: str | None = None) -> int | None:
     """Minutes from now until the user leaves their last vehicle, or None if unknown.
 
@@ -110,9 +139,7 @@ def trip_minutes(session, side_number: str | None, get_off: str | None = None) -
     st = rt.vehicle_status(side_number) if side_number else None
     legs = session.plan["legs"] if session.plan else []
     if st and get_off:
-        want = get_off.strip().casefold()
-        stop = (next((s for s in st["remaining_stops"] if s["name"].casefold() == want), None)
-                or next((s for s in st["remaining_stops"] if want in s["name"].casefold()), None))
+        stop = stop_ahead(st, get_off)
         if stop is None:
             raise WalletError("unknown_stop", f"'{get_off}' is not ahead on {side_number}. Remaining stops: "
                               + ", ".join(s["name"] for s in st["remaining_stops"]))
@@ -129,14 +156,17 @@ def trip_minutes(session, side_number: str | None, get_off: str | None = None) -
     return None
 
 
+def _shortest_lasting(minutes: int, fare: str) -> dict:
+    """The shortest ticket of this fare valid for at least `minutes` (the longest if none is)."""
+    suffix = "_u" if fare == "reduced" else "_n"
+    options = sorted((t for t in catalog() if t["id"].endswith(suffix)), key=lambda t: t["valid_min"])
+    return next((t for t in options if t["valid_min"] >= minutes), options[-1])
+
+
 def pick_ticket(minutes: int | None, fare: str = "full") -> dict:
     """The shortest ticket of this fare still valid TICKET_MARGIN_MIN after the ride ends
     (the longest one if none is long enough, the shortest one if the ride length is unknown)."""
-    suffix = "_u" if fare == "reduced" else "_n"
-    options = sorted((t for t in catalog() if t["id"].endswith(suffix)), key=lambda t: t["valid_min"])
-    if minutes is None:
-        return options[0]
-    return next((t for t in options if t["valid_min"] >= minutes + TICKET_MARGIN_MIN), options[-1])
+    return _shortest_lasting(0 if minutes is None else minutes + TICKET_MARGIN_MIN, fare)
 
 
 # --- tool implementations ------------------------------------------------
@@ -151,18 +181,46 @@ def get_balance(session) -> dict:
     }
 
 
-def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
-                   fare: str = "full", get_off: str | None = None) -> dict:
-    """ticket_id None: pick the ticket that lasts the whole ride; a shorter ticket_id is upgraded to it."""
-    side_number = side_number or session.current_vehicle
+def missing_ticket_info(session, ticket_id: str | None = None, fare: str | None = None,
+                        duration_min: int | None = None, get_off: str | None = None) -> list[str]:
+    """What we still have to ask before choosing a ticket: "fare" (normalny / ulgowy) and/or
+    "duration" (how long, or where to: the user said where they get off, or planned a route)."""
+    missing = []
+    if not (fare or ticket_id or session.fare):
+        missing.append("fare")
+    if not (duration_min or ticket_id or get_off or session.plan):
+        missing.append("duration")
+    return missing
+
+
+def ask_ticket_info(session, missing: list[str]) -> str:
+    if missing == ["fare"]:
+        return session.t("Bilet normalny czy ulgowy?", "Full fare or reduced fare?")
+    if missing == ["duration"]:
+        return session.t("Dokąd jedziesz albo na ile minut ma być bilet?",
+                         "Where are you going, or how many minutes should the ticket last?")
+    return session.t("Dokąd jedziesz albo na ile minut ma być bilet? I czy normalny, czy ulgowy?",
+                     "Where are you going, or how many minutes should the ticket last? And full or reduced fare?")
+
+
+def _resolve_side_number(side_number: str | None) -> str | None:
     if side_number and side_number not in rt.VEHICLES:
         veh = rt.find_vehicle(side_number)  # "HG 935", "935"...
         if veh is None:
             raise WalletError("unknown_vehicle", f"Vehicle '{side_number}' not found.")
         side_number = veh["side_number"]
-    minutes = trip_minutes(session, side_number, get_off)
+    return side_number
+
+
+def choose_ticket(session, fare: str, ticket_id: str | None, side_number: str | None,
+                  get_off: str | None = None, duration_min: int | None = None) -> tuple[dict, int | None]:
+    """(ticket, minutes of the ride or None). Fare and how long must already be known."""
+    # The ride the user told us about (get_off, or a planned route); a duration alone sizes nothing.
+    minutes = trip_minutes(session, side_number, get_off) if (get_off or session.plan) else None
     if ticket_id is None:
-        ticket = pick_ticket(minutes, fare)
+        ticket = pick_ticket(minutes, fare) if minutes is not None else _shortest_lasting(duration_min, fare)
+        if duration_min and minutes is not None and ticket["valid_min"] < duration_min:
+            ticket = _shortest_lasting(duration_min, fare)  # the user asked for a longer one
     else:
         ticket = next((t for t in catalog() if t["id"] == ticket_id), None)
         if ticket is None:
@@ -171,6 +229,31 @@ def prepare_ticket(session, ticket_id: str | None = None, side_number: str | Non
             enough = pick_ticket(minutes, "reduced" if ticket["id"].endswith("_u") else "full")
             if ticket["valid_min"] < enough["valid_min"]:
                 ticket = enough
+    return ticket, minutes
+
+
+def preview_ticket(session, fare: str | None = None, get_off: str | None = None,
+                   duration_min: int | None = None) -> dict:
+    """The ticket prepare_ticket would prepare now (for "Kupić bilet 30-minutowy…?" offers)."""
+    return choose_ticket(session, fare or session.fare, None, session.current_vehicle, get_off, duration_min)[0]
+
+
+def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
+                   fare: str | None = None, get_off: str | None = None,
+                   duration_min: int | None = None) -> dict:
+    """Needs the fare and how long (duration_min, or get_off / a planned route to size it from the
+    ride); without them it returns {"status": "needs_info", "question"} and nothing is pending.
+    ticket_id None: pick the ticket that lasts the whole ride; a shorter ticket_id is upgraded to it."""
+    if fare:
+        session.fare = fare  # a discount doesn't change mid-conversation: don't ask again
+    missing = missing_ticket_info(session, ticket_id, fare, duration_min, get_off)
+    if missing:
+        return {"status": "needs_info", "missing": missing, "question": ask_ticket_info(session, missing)}
+    if not fare:
+        fare = ("reduced" if ticket_id.endswith("_u") else "full") if ticket_id else session.fare
+
+    side_number = _resolve_side_number(side_number or session.current_vehicle)
+    ticket, minutes = choose_ticket(session, fare, ticket_id, side_number, get_off, duration_min)
     if ticket["requires_vehicle_side_number"] and not side_number:
         raise WalletError("missing_side_number",
                           "Vehicle unknown. Call match_boarded_vehicle first, or ask the user to say when they board.")

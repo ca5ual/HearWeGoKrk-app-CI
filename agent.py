@@ -49,6 +49,12 @@ _SIDE = re.compile(r"(numer boczny|numer pojazdu|pojazd|side number|vehicle)", r
 _DEPART = re.compile(r"(kiedy|nast[eę]pn|odjazd|next|when)", re.I)
 _LATE = re.compile(r"(sp[oó][źz]ni|op[oó][źz]ni|\blate\b|\bdelay)", re.I)
 _REPEAT = re.compile(r"(powt[oó]rz|repeat|say again)", re.I)
+_REDUCED = re.compile(r"(ulg|zni[żz]k|reduced|discount)", re.I)
+_FULL = re.compile(r"(normaln|pe[łl]n|full|(bez|nie mam)\s+(\w+\s+)?(ulg|zni[żz]k)|no discount)", re.I)
+
+# How long the ticket should last: "30 minut", "30-minutowy", "pół godziny", "godzinę"...
+_DURATION_WORDS = [(r"p[oó][łl]torej|hour and a half", 90), (r"p[oó][łl] godziny|half an hour", 30),
+                   (r"kwadrans|quarter", 15), (r"godzin|\bhour\b", 60)]
 
 # Spoken line names -> line ids. Order matters: longer phrases first.
 _LINE_WORDS = [("sto dwadzie[sś]cia cztery", "B124"), ("czternast", "T14"), ("dwunast", "T12"), ("jedynk", "T1"),
@@ -180,6 +186,11 @@ def rule_respond(session, text: str) -> AgentReply:
                                                            "OK, I'll tell you when it's arriving."), out))
         if offer == "buy":
             t = "kup bilet"  # fall through to the buy branch below
+    if offer == "ticket_info" and (_fare_of(t) or _duration_of(t) or _get_off_in(session, t) or _YES.search(t)):
+        t = "kup bilet " + t  # the answer to "normalny czy ulgowy / na ile minut?" ("tak": ask again)
+    elif offer in ("buy", "ticket_info") and _NO.search(t):
+        session.flags.pop("ticket_req", None)
+        return _remember(session, AgentReply(session.t("Dobrze, nie kupuję.", "OK, not buying."), out))
 
     # 4) Intents.
     if _BALANCE.search(t):
@@ -191,20 +202,23 @@ def rule_respond(session, text: str) -> AgentReply:
             msg = session.t("Jesteś bez słuchawek. Podać saldo na głos?", "You're not wearing headphones. Say the balance aloud?")
         return _remember(session, AgentReply(msg, out))
 
-    # The user said the side number ("jestem w HG 935", "numer boczny 935"): no GPS needed.
-    if (_BOARD.search(t) or _BUY.search(t) or _SIDE.search(t)) and tools.provider.find_vehicle(t):
+    # The user said the side number ("jestem w HG 935", "numer boczny 935", or just "HG 935" after
+    # we asked for it): no GPS needed.
+    if (_BOARD.search(t) or _BUY.search(t) or _SIDE.search(t) or offer == "side_number") and tools.provider.find_vehicle(t):
         r = run("set_vehicle", side_number=t)
         v = r["vehicle"]
+        _remember_ticket_req(session, t)  # "jestem w HG 935, jadę do Ronda Grunwaldzkiego"
         if not _BUY.search(t):
             session.flags["offer"] = "buy"
             return _remember(session, AgentReply(session.t(
                 f"Jesteś w pojeździe {v['side_number']}"
                 + (f", linia {r['line_number']}" if r["line_number"] else "") + ". ",
                 f"You're in vehicle {v['side_number']}"
-                + (f", line {r['line_number']}" if r["line_number"] else "") + ". ") + _offer_ticket(session), out))
+                + (f", line {r['line_number']}" if r["line_number"] else "") + ". ") + _offer_ticket(session, t), out))
     elif _BOARD.search(t) or (_BUY.search(t) and not session.current_vehicle):
         r = run("match_boarded_vehicle")
         if not r.get("matched"):
+            session.flags["offer"] = "side_number"
             return _remember(session, AgentReply(session.t(
                 "Nie widzę jeszcze, w którym pojeździe jesteś. Powiedz numer boczny z naklejki przy drzwiach, "
                 "na przykład HG 935.",
@@ -215,10 +229,14 @@ def rule_respond(session, text: str) -> AgentReply:
             session.flags["offer"] = "buy"
             return _remember(session, AgentReply(session.t(
                 f"Jesteś w linii {r['line_number']}, pojazd {v['side_number']}. ",
-                f"You're on line {r['line_number']}, vehicle {v['side_number']}. ") + _offer_ticket(session), out))
+                f"You're on line {r['line_number']}, vehicle {v['side_number']}. ") + _offer_ticket(session, t), out))
 
     if _BUY.search(t):
-        r = run("prepare_ticket")
+        r = run("prepare_ticket", **_remember_ticket_req(session, t))
+        if r.get("status") == "needs_info":
+            session.flags["offer"] = "ticket_info"
+            return _remember(session, AgentReply(_not_on_this_vehicle(session, t) + r["question"], out))
+        session.flags.pop("ticket_req", None)
         if "error" in r:
             return _remember(session, AgentReply(session.t("Nie mogę teraz przygotować biletu.",
                                                            "I can't prepare a ticket right now."), out))
@@ -244,9 +262,54 @@ def rule_respond(session, text: str) -> AgentReply:
     return _remember(session, AgentReply(msg, out))
 
 
-def _offer_ticket(session) -> str:
-    """'Kupić bilet 30-minutowy…?' with the ticket prepare_ticket would pick for this ride."""
-    t = wallet.pick_ticket(wallet.trip_minutes(session, session.current_vehicle))
+def _fare_of(text: str) -> str | None:
+    return "full" if _FULL.search(text) else "reduced" if _REDUCED.search(text) else None  # "bez ulgi" is full
+
+
+def _duration_of(text: str) -> int | None:
+    m = re.search(r"(\d+)\s*-?\s*min", text, re.I)
+    if m:
+        return int(m[1])
+    return next((n for pat, n in _DURATION_WORDS if re.search(pat, text, re.I)), None)
+
+
+def _get_off_in(session, text: str) -> str | None:
+    """The stop ahead of the user's vehicle that they named ("jadę do Ronda Grunwaldzkiego")."""
+    st = tools.provider.vehicle_status(session.current_vehicle) if session.current_vehicle else None
+    stop = wallet.stop_ahead(st, text) if st else None
+    return stop["name"] if stop else None
+
+
+_GOING = re.compile(r"(jad[eę]|jedziemy|wysiadam|going to|getting off)", re.I)
+
+
+def _not_on_this_vehicle(session, text: str) -> str:
+    """"Jadę na Salwator" on a tram that doesn't go there: say so before asking how long instead."""
+    if session.current_vehicle and _GOING.search(text) and not _get_off_in(session, text):
+        return session.t("Nie widzę tego przystanku na trasie tego pojazdu. ",
+                         "I can't see that stop on this vehicle's route. ")
+    return ""
+
+
+def _remember_ticket_req(session, text: str) -> dict:
+    """What the user said about the ticket so far, across turns: fare, duration_min, get_off."""
+    req = session.flags.setdefault("ticket_req", {})
+    said = {"fare": _fare_of(text), "duration_min": _duration_of(text), "get_off": _get_off_in(session, text)}
+    req.update({k: v for k, v in said.items() if v})
+    return req
+
+
+def _offer_ticket(session, text: str = "") -> str:
+    """'Kupić bilet 30-minutowy…?' with the ticket prepare_ticket would pick for this ride, or, if we
+    don't know the fare or how long the ride is yet, the question about that."""
+    req = session.flags.get("ticket_req", {})
+    missing = wallet.missing_ticket_info(session, **req)
+    if missing:
+        session.flags["offer"] = "ticket_info"
+        return (session.t("Kupić bilet? ", "Buy a ticket? ") + _not_on_this_vehicle(session, text)
+                + wallet.ask_ticket_info(session, missing))
+    session.flags["offer"] = "buy"
+    t = wallet.preview_ticket(session, **req)
     return session.t(f"Kupić {t['name_pl']}?", f"Buy a {t['name_en']}?")
 
 

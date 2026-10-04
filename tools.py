@@ -128,8 +128,8 @@ def get_balance(session) -> dict:
 
 
 def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
-                   fare: str = "full", get_off: str | None = None) -> dict:
-    return wallet.prepare_ticket(session, ticket_id, side_number, fare, get_off)
+                   fare: str | None = None, get_off: str | None = None, duration_min: int | None = None) -> dict:
+    return wallet.prepare_ticket(session, ticket_id, side_number, fare, get_off, duration_min)
 
 
 def confirm_pending_action(session, pending_action_id: str | None = None) -> dict:
@@ -196,17 +196,23 @@ TOOLS: dict[str, Tool] = {
         _obj({})),
     "prepare_ticket": Tool(
         prepare_ticket,
-        "Prepare (NOT buy) a ticket for the current vehicle. Say `confirmation_text` exactly and wait "
-        "for an explicit yes in the next user turn. Omit ticket_id: the backend picks the shortest "
-        "ticket valid for the rest of the ride (trip_min). Pass ticket_id only when the user asks for "
-        "a specific ticket; if covers_trip is then false, warn that it ends before the ride does.",
+        "Prepare (NOT buy) a ticket for the current vehicle. Needs the fare (normalny / ulgowy) and how "
+        "long: duration_min, or get_off, or a route planned earlier. If the user hasn't said them, ask "
+        "first; if this returns status needs_info, say its `question` and wait. Otherwise say "
+        "`confirmation_text` exactly and wait for an explicit yes in the next user turn. Omit ticket_id: "
+        "the backend picks the shortest ticket valid for the ride (trip_min) or for duration_min. Pass "
+        "ticket_id only when the user asks for a specific ticket; if covers_trip is then false, warn "
+        "that it ends before the ride does.",
         _obj({"ticket_id": {"type": "string"}, "side_number": {"type": "string"},
               "fare": {"type": "string", "enum": ["full", "reduced"],
-                       "description": "'reduced' only if the user says they have a discount (ulga)."},
+                       "description": "'full' (normalny) or 'reduced' (ulgowy, a discount) as the user said. "
+                                      "Omit if they haven't said it: never assume full fare."},
+              "duration_min": {"type": "integer",
+                               "description": "How long the ticket should last, if the user said it "
+                                              "('na pół godziny' = 30, 'na godzinę' = 60)."},
               "get_off": {"type": "string",
                           "description": "Stop where the user gets off, whenever they said it (e.g. 'Rondo "
-                                         "Mogilskie'): the ticket then covers the ride to that stop, not to "
-                                         "the end of the line."}}),
+                                         "Mogilskie'): the ticket then covers the ride to that stop."}}),
         ui_component="ticket_confirm"),
     "confirm_pending_action": Tool(
         confirm_pending_action,
@@ -223,7 +229,7 @@ def tool_schemas_anthropic() -> list[dict]:
     return [{"name": n, "description": t.description, "input_schema": t.parameters} for n, t in TOOLS.items()]
 
 
-_NO_UI_STATUSES = {"ambiguous", "not_found", "no_route"}
+_NO_UI_STATUSES = {"ambiguous", "not_found", "no_route", "needs_info"}
 
 
 def execute(session, name: str, args: dict | None = None) -> ToolOutcome:

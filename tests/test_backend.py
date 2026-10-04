@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pytest
 from fastapi.testclient import TestClient
 
+import agent
 import speech
 import tools
 import wallet
@@ -102,10 +103,11 @@ def test_demo_bus_de777_to_rondo_mogilskie():
     assert client.post("/demo/clock", json={"offset_min": 11}).status_code == 200
     assert client.post("/demo/gps", json={"side_number": "DE777"}).status_code == 200
     r = say("Wsiadłem", sid=r["session_id"])
-    assert "DE777" in r["reply_text"] and "30-minutowy" in r["reply_text"]
-    r = say("tak", sid=r["session_id"])
+    assert "DE777" in r["reply_text"] and "normalny czy ulgowy" in r["reply_text"]  # the route sizes it
+    r = say("ulgowy", sid=r["session_id"])
     prep = r["tools"][-1]["result"]
     assert prep["side_number"] == "DE777" and prep["trip_min"] < 20 and prep["covers_trip"]
+    assert prep["ticket_id"] == "kmk_30min_u" and "Potwierdzasz?" in r["reply_text"]
 
 
 @pytest.mark.parametrize("minute", [0, 3, 5])
@@ -179,9 +181,10 @@ def _board_hg935():
 def test_s6_s7_board_and_buy():
     _board_hg935()
     r = say("Wsiadłem")
-    assert "HG935" in r["reply_text"]
-    r = say("tak", sid=r["session_id"])          # accept the "buy a ticket?" offer
+    assert "HG935" in r["reply_text"] and "Dokąd jedziesz" in r["reply_text"] and "ulgowy" in r["reply_text"]
+    r = say("normalny, na pół godziny", sid=r["session_id"])  # answer the "buy a ticket?" question
     assert "Potwierdzasz?" in r["reply_text"] and "HG935" in r["reply_text"]
+    assert r["tools"][-1]["result"]["ticket_id"] == "kmk_30min_n"
     assert r["pending"]
     price = r["tools"][-1]["result"]["ticket"]["price_pln"]
     before = wallet.get_balance(Session())["balance_pln"]
@@ -192,7 +195,7 @@ def test_s6_s7_board_and_buy():
 
 def test_s9_stop_cancels():
     _board_hg935()
-    r = say("kup bilet")
+    r = say("kup bilet normalny na 30 minut")
     assert r["pending"]
     r = say("Stop! Anuluj.", sid=r["session_id"])
     assert r["pending"] is None and "Anulowałem" in r["reply_text"]
@@ -220,8 +223,13 @@ def test_side_number_said_by_user():
     rt.reset_clock(12)
     r = say("Jestem w HG 935")
     assert "HG935" in r["reply_text"] and "12" in r["reply_text"]
-    r = say("tak", sid=r["session_id"])
+    r = say("tak", sid=r["session_id"])          # "Kupić bilet?" -> yes, but how long and which fare
+    assert "Dokąd jedziesz" in r["reply_text"] and not r["pending"]
+    r = say("ulgowy", sid=r["session_id"])       # one answer at a time: only the duration is left
+    assert r["reply_text"] == "Dokąd jedziesz albo na ile minut ma być bilet?" and not r["pending"]
+    r = say("na 60 minut", sid=r["session_id"])
     assert "Potwierdzasz?" in r["reply_text"] and "HG935" in r["reply_text"]
+    assert r["tools"][-1]["result"]["ticket_id"] == "kmk_60min_u"
     r = say("tak", sid=r["session_id"])
     assert "HG935" in r["reply_text"] and "Kupione" in r["reply_text"]
 
@@ -273,7 +281,7 @@ def test_ticket_before_boarding_al_pokoju_to_rondo_mogilskie():
     rt.reset_clock(0)
     s = Session()
     tools.execute(s, "plan_route", {"destination": "rondo mogilskie"})
-    prep = tools.execute(s, "prepare_ticket", {"side_number": "DE777"}).result
+    prep = tools.execute(s, "prepare_ticket", {"side_number": "DE777", "fare": "full"}).result
     assert prep["trip_min"] == 20 and prep["ticket_id"] == "kmk_30min_n"
 
 
@@ -294,7 +302,7 @@ def test_ticket_on_a_later_bus_is_not_too_short():
     rt.reset_clock(30)
     eta = next(x["eta_min"] for x in rt.vehicle_status(later)["remaining_stops"] if x["name"] == "AGH / UR")
     s.current_vehicle = later
-    prep = tools.execute(s, "prepare_ticket", {}).result
+    prep = tools.execute(s, "prepare_ticket", {"fare": "full"}).result
     assert prep["trip_min"] == eta and prep["covers_trip"]
     assert prep["ticket"]["valid_min"] >= eta + wallet.TICKET_MARGIN_MIN
 
@@ -311,7 +319,7 @@ def test_ticket_covers_the_transfer():
         {"type": "ride", "line_number": "1", "to": "Salwator", "wait_min": 4, "ride_min": 25},
     ]})
     assert wallet.trip_minutes(s, "HG935") == eta + 3 + 4 + 25
-    prep = tools.execute(s, "prepare_ticket", {}).result
+    prep = tools.execute(s, "prepare_ticket", {"fare": "full"}).result
     assert prep["ticket_id"] == "kmk_60min_n" and "60-minutowy" in prep["confirmation_text"]
 
 
@@ -349,12 +357,41 @@ def test_explicit_long_ticket_is_kept():
 
 
 def test_rule_agent_offers_the_ticket_it_will_buy():
-    rt.reset_clock(12)
-    r = say("Jestem w HG 935")
-    offered = wallet.pick_ticket(wallet.trip_minutes(Session(current_vehicle="HG935"), "HG935"))
-    assert offered["name_pl"] in r["reply_text"]
-    r = say("tak", sid=r["session_id"])
-    assert r["tools"][-1]["result"]["ticket_id"] == offered["id"]
+    """Fare and route already known: the offer names the ticket "tak" then prepares."""
+    s = _plan_agh()
+    s.fare = "reduced"
+    rt.reset_clock(11)
+    s.current_vehicle = s.plan["legs"][-1]["vehicle"]["side_number"]
+    offered = wallet.pick_ticket(wallet.trip_minutes(s, s.current_vehicle), "reduced")
+    assert agent._offer_ticket(s) == f"Kupić {offered['name_pl']}?"
+    r = agent.rule_respond(s, "kup bilet")
+    assert r.outcomes[-1].result["ticket_id"] == offered["id"]
+
+
+def test_ticket_asks_for_what_the_user_did_not_say():
+    """No fare and no duration / destination: ask, and nothing is pending until both are known."""
+    s = Session(current_vehicle="HG935")
+    r = tools.execute(s, "prepare_ticket", {}).result
+    assert r["status"] == "needs_info" and r["missing"] == ["fare", "duration"] and s.pending is None
+    r = tools.execute(s, "prepare_ticket", {"duration_min": 40}).result
+    assert r["missing"] == ["fare"] and r["question"] == "Bilet normalny czy ulgowy?"
+    r = tools.execute(s, "prepare_ticket", {"fare": "reduced"}).result
+    assert r["missing"] == ["duration"] and s.pending is None
+    assert tools.execute(s, "prepare_ticket", {"duration_min": 40}).result["ticket_id"] == "kmk_60min_u"  # fare remembered
+
+
+@pytest.mark.parametrize("duration, ticket_id", [(15, "kmk_15min_n"), (30, "kmk_30min_n"), (40, "kmk_60min_n"), (90, "kmk_90min_n")])
+def test_ticket_for_the_duration_the_user_said(duration, ticket_id):
+    """"Bilet na 30 minut" is a 30-minute ticket: the margin is for rides we size, not for durations said."""
+    s = Session(current_vehicle="HG935")
+    assert tools.execute(s, "prepare_ticket", {"fare": "full", "duration_min": duration}).result["ticket_id"] == ticket_id
+
+
+def test_rule_agent_reads_fare_and_duration():
+    assert [agent._fare_of(t) for t in ("ulgowy", "mam zniżkę", "normalny", "nie mam ulgi", "bilet")] \
+        == ["reduced", "reduced", "full", "full", None]
+    assert [agent._duration_of(t) for t in ("30 minut", "60-minutowy", "pół godziny", "godzinę", "półtorej godziny", "kwadrans", "tak")] \
+        == [30, 60, 30, 60, 90, 15, None]
 
 
 def test_mock_fleet_is_ttss():
@@ -420,9 +457,9 @@ def test_ticket_to_the_stop_the_user_named():
     """"Kup bilet z Alei Pokoju do Ronda Mogilskiego" on DE777, no route planned: to Rondo Mogilskie, not the end of 124."""
     rt.reset_clock(11)
     s = Session()
-    prep = tools.execute(s, "prepare_ticket", {"side_number": "DE777", "get_off": "rondo mogilskie"}).result
+    prep = tools.execute(s, "prepare_ticket", {"side_number": "DE777", "get_off": "rondo mogilskie", "fare": "full"}).result
     assert prep["trip_min"] < 20 and prep["ticket_id"] == "kmk_30min_n"
-    assert tools.execute(s, "prepare_ticket", {"side_number": "DE777"}).result["ticket_id"] == "kmk_60min_n"
+    assert tools.execute(s, "prepare_ticket", {"side_number": "DE777"}).result["missing"] == ["duration"]
     err = tools.execute(s, "prepare_ticket", {"side_number": "DE777", "get_off": "Salwator"}).result
     assert err["error"] == "unknown_stop" and "Rondo Mogilskie" in err["message"]
 
@@ -437,7 +474,7 @@ def test_route_picked_on_screen_sizes_the_voice_ticket():
         assert r["best"]["legs"][1]["vehicle"]["side_number"] == "DE777"
         rt.reset_clock(11)
         assert client.post("/demo/gps", json={"side_number": "DE777"}).status_code == 200
-        ws.send_json({"type": "text", "text": "kup bilet"})
+        ws.send_json({"type": "text", "text": "kup bilet normalny"})
         spoken = [m["text"] for m in _until_idle(ws) if m["type"] == "reply_text"]
         assert "30-minutowy" in spoken[-1] and "D E 7 7 7" in spoken[-1]
 
@@ -446,7 +483,7 @@ def test_demo_reset_clears_open_websocket():
     _board_hg935()
     with client.websocket_connect("/ws/voice") as ws:
         _until_idle(ws)
-        ws.send_json({"type": "text", "text": "kup bilet"})
+        ws.send_json({"type": "text", "text": "kup bilet normalny na 30 minut"})
         assert any(m["type"] == "pending_confirmation" for m in _until_idle(ws))
         client.post("/demo/reset", json={"offset_min": 0})
         ws.send_json({"type": "text", "text": "tak"})
@@ -478,12 +515,12 @@ def test_spoken_answer_closes_the_modal():
     _board_hg935()
     with client.websocket_connect("/ws/voice") as ws:
         _until_idle(ws)
-        ws.send_json({"type": "text", "text": "kup bilet"})
+        ws.send_json({"type": "text", "text": "kup bilet normalny na 30 minut"})
         pid = next(m["id"] for m in _until_idle(ws) if m["type"] == "pending_confirmation")
         ws.send_json({"type": "text", "text": "nie"})
         assert {"type": "pending_cancelled", "id": pid} in _until_idle(ws)
 
-        ws.send_json({"type": "text", "text": "kup bilet"})
+        ws.send_json({"type": "text", "text": "kup bilet normalny na 30 minut"})
         _until_idle(ws)
         ws.send_json({"type": "text", "text": "tak"})
         msgs = _until_idle(ws)
@@ -573,7 +610,7 @@ def test_long_llm_reply_does_not_eat_the_confirmation_time(monkeypatch):
         conv.session.ai_disclosed = True  # the disclosure is covered by test_first_reply_discloses_ai_and_the_window_counts_it
         _board_hg935()
         monkeypatch.setattr(agent, "respond", chatty)
-        await conv.handle_utterance("kup bilet")
+        await conv.handle_utterance("kup bilet normalny na 30 minut")
         s = conv.session
         spoken = [m["text"] for m in sent if m["type"] == "reply_text"]
         assert spoken == [speech.spell_side_numbers(next(m for m in sent if m["type"] == "pending_confirmation")
@@ -602,7 +639,7 @@ def test_first_reply_discloses_ai_and_the_window_counts_it():
             sent.append({"type": type_, **payload})
         conv.send = fake_send
         _board_hg935()
-        await conv.handle_utterance("kup bilet")
+        await conv.handle_utterance("kup bilet normalny na 30 minut")
         s = conv.session
         confirmation = next(m for m in sent if m["type"] == "pending_confirmation")["data"]["confirmation_text"]
         text = next(m for m in sent if m["type"] == "reply_text")["text"]
@@ -637,7 +674,7 @@ def test_demo_reset_during_a_turn_does_not_crash(monkeypatch):
             conv.reset()
             return r
         monkeypatch.setattr(agent, "respond", reset_midway)
-        await conv.handle_utterance("kup bilet")
+        await conv.handle_utterance("kup bilet normalny na 30 minut")
         assert conv.session.pending is None and conv.session.timer_task is None
         assert not any(m["type"] in ("pending_confirmation", "reply_text") for m in sent)
         assert sent[-1] == {"type": "state", "value": "idle"}
@@ -691,3 +728,47 @@ def test_bus_stops_mock_data():
     assert stops_by_id["tauron_arena_krakow"]["step_free_access"] is None  # not surveyed: unknown
     assert "bus" in stops_by_id["tauron_wieczysta"]["modes"]
 
+
+
+@pytest.mark.parametrize("said, stop", [
+    ("do Ronda Grunwaldzkiego", "Rondo Grunwaldzkie"), ("na pocztę główną", "Poczta Główna"),
+    ("do kampusu UJ", "Kampus UJ"), ("na Czerwone Maki", "Czerwone Maki P+R"), ("Salwator", None),
+    ("Jestem w HG 935, kup bilet ulgowy na 30 minut", None),
+])
+def test_stop_ahead_understands_polish_forms(said, stop):
+    rt.reset_clock(12)
+    hit = wallet.stop_ahead(rt.vehicle_status("HG935"), said)
+    assert (hit and hit["name"]) == stop
+
+
+def test_stop_ahead_does_not_guess_between_stops():
+    rt.reset_clock(11)
+    st = rt.vehicle_status("DE777")
+    assert wallet.stop_ahead(st, "do Ronda") is None  # Młyńskie, Mogilskie or Grunwaldzkie
+    assert wallet.stop_ahead(st, "do Dworca Głównego")["name"] == "Dworzec Główny Wschód"
+
+
+def test_side_number_and_destination_in_one_sentence():
+    """"Jestem w HG 935, jadę do Ronda Grunwaldzkiego, kup bilet ulgowy": 11 min + margin -> 15 min."""
+    rt.reset_clock(12)
+    r = say("Jestem w HG 935, jadę do Ronda Grunwaldzkiego, kup bilet ulgowy")
+    prep = r["tools"][-1]["result"]
+    assert prep["ticket_id"] == "kmk_15min_u" and prep["trip_min"] == 11 and r["pending"]
+
+
+def test_bare_side_number_answers_the_question():
+    """After "Powiedz numer boczny", just "HG 935" is the vehicle, not a destination."""
+    rt.reset_clock(12)
+    DEMO_GPS.update(lat=50.0, lon=19.80)  # GPS finds no vehicle
+    r = say("kup bilet")
+    assert "numer boczny" in r["reply_text"]
+    r = say("HG 935", sid=r["session_id"])
+    assert "HG935" in r["reply_text"] and "Dokąd jedziesz" in r["reply_text"]
+    r = say("do Ruczaju, normalny", sid=r["session_id"])
+    assert r["tools"][-1]["result"]["ticket_id"] == "kmk_30min_n"
+
+
+def test_rule_agent_says_when_the_vehicle_does_not_go_there():
+    rt.reset_clock(12)
+    r = say("Jestem w HG 935 i jadę na Salwator, poproszę bilet normalny")
+    assert r["reply_text"].startswith("Nie widzę tego przystanku") and not r["pending"]
