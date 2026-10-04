@@ -181,6 +181,11 @@ def test_refusal_is_handled():
     assert r.text.startswith("Przepraszam")
 
 
+def test_prompt_leaves_the_ai_disclosure_to_the_app():
+    assert "Jestem asystentem AI" not in llm_agent.SYSTEM_PROMPT
+    assert "Do not introduce yourself" in llm_agent.SYSTEM_PROMPT
+
+
 # --- ElevenLabs TTS ---------------------------------------------------------------------
 def _mock_elevenlabs(monkeypatch, handler):
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
@@ -216,7 +221,13 @@ def test_tts_error_or_missing_config_yields_nothing(monkeypatch):
 
 def test_websocket_sends_tts_audio(monkeypatch):
     monkeypatch.setattr(agent, "USE_LLM", False)
-    _mock_elevenlabs(monkeypatch, lambda req: httpx.Response(200, content=b"mp3" * 10))
+    bodies = []
+
+    def handler(req: httpx.Request):
+        bodies.append(json.loads(req.content))
+        return httpx.Response(200, content=b"mp3" * 10)
+
+    _mock_elevenlabs(monkeypatch, handler)
     with client.websocket_connect("/ws/voice") as ws:
         ws.receive_json(), ws.receive_json()
         ws.send_json({"type": "text", "text": "Jak dojadę na Rynek?"})
@@ -226,6 +237,7 @@ def test_websocket_sends_tts_audio(monkeypatch):
     types = [m["type"] for m in msgs]
     assert types.index("reply_text") < types.index("audio_chunk")
     assert any(m["type"] == "audio_chunk" and m["data"] for m in msgs)
+    assert bodies[0]["text"].startswith(speech.AI_DISCLOSURE_SPOKEN + " ")  # TTS says the English "AI"
 
 
 def test_real_sdk_request_and_history_serialization():

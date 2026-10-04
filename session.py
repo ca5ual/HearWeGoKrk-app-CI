@@ -30,6 +30,7 @@ class Session:
     lon: float | None = None
     headphones: bool = False             # decides whether amounts may be spoken aloud
     turn: int = 0                        # incremented on every user utterance
+    ai_disclosed: bool = False           # the AI disclosure was spoken (voice_ws.Conversation.speak)
     current_vehicle: str | None = None   # side number of the vehicle the user is in
     target_stop_name: str | None = None  # where the user wants to get off (for announcements)
     plan: dict | None = None             # {"legs", "start_min"} up to the last ride (ticket length)
