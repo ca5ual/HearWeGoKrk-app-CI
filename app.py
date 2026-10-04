@@ -33,6 +33,7 @@ REST_SESSIONS: dict[str, Session] = {}
 class RouteReq(BaseModel):
     destination: str
     prefer_low_floor: bool | None = None
+    session_id: str | None = None  # the phone's voice session: the plan then sizes its ticket
 
 
 class AgentTextReq(BaseModel):
@@ -82,7 +83,11 @@ def vehicle(side_number: str):
 
 @app.post("/route")
 def route(req: RouteReq):
-    return tools.execute(Session(), "plan_route", req.model_dump(exclude_none=True)).result
+    s = voice_ws.session_by_id(req.session_id)
+    print(f"[route] {req.destination!r}: " + (f"voice session {s.id}" if s else
+          f"no open voice session {req.session_id!r}, the ticket won't know this route"))
+    s = s or Session()
+    return tools.execute(s, "plan_route", req.model_dump(exclude_none=True, exclude={"session_id"})).result
 
 
 @app.get("/wallet")

@@ -14,7 +14,6 @@ Safety rules enforced HERE, not only in the prompt (an LLM can be talked into an
 
 import copy
 import json
-import math
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -99,15 +98,25 @@ def _leg_min(leg: dict) -> int:
     return leg["minutes"] if leg["type"] == "walk" else leg["wait_min"] + leg["ride_min"]
 
 
-def trip_minutes(session, side_number: str | None) -> int | None:
+def trip_minutes(session, side_number: str | None, get_off: str | None = None) -> int | None:
     """Minutes from now until the user leaves their last vehicle, or None if unknown.
 
+    On a vehicle, with the stop the user said they get off at: its live ETA to that stop.
     On a vehicle that rides a leg of the planned route: its live ETA to that leg's stop, plus the
     planned legs after it (transfers). On any other vehicle: to the end of its line. Not on a
-    running vehicle: the planned route from when it was planned.
+    running vehicle yet: the planned route from boarding the first vehicle (the ticket is validated
+    on board, so the walk and the wait before it don't count).
     """
     st = rt.vehicle_status(side_number) if side_number else None
     legs = session.plan["legs"] if session.plan else []
+    if st and get_off:
+        want = get_off.strip().casefold()
+        stop = (next((s for s in st["remaining_stops"] if s["name"].casefold() == want), None)
+                or next((s for s in st["remaining_stops"] if want in s["name"].casefold()), None))
+        if stop is None:
+            raise WalletError("unknown_stop", f"'{get_off}' is not ahead on {side_number}. Remaining stops: "
+                              + ", ".join(s["name"] for s in st["remaining_stops"]))
+        return stop["eta_min"]
     if st:
         etas = {s["name"]: s["eta_min"] for s in st["remaining_stops"]}
         for i, leg in enumerate(legs):
@@ -115,8 +124,8 @@ def trip_minutes(session, side_number: str | None) -> int | None:
                 return etas[leg["to"]] + sum(_leg_min(x) for x in legs[i + 1:])
         return st["remaining_stops"][-1]["eta_min"] if st["remaining_stops"] else None
     if legs:
-        end = session.plan["start_min"] + sum(_leg_min(x) for x in legs)
-        return max(0, math.ceil(end - rt.now_min()))
+        first = next(i for i, leg in enumerate(legs) if leg["type"] == "ride")
+        return legs[first]["ride_min"] + sum(_leg_min(x) for x in legs[first + 1:])
     return None
 
 
@@ -143,21 +152,25 @@ def get_balance(session) -> dict:
 
 
 def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
-                   fare: str = "full") -> dict:
-    """ticket_id None: pick the ticket that lasts the whole ride (pick_ticket)."""
+                   fare: str = "full", get_off: str | None = None) -> dict:
+    """ticket_id None: pick the ticket that lasts the whole ride; a shorter ticket_id is upgraded to it."""
     side_number = side_number or session.current_vehicle
     if side_number and side_number not in rt.VEHICLES:
         veh = rt.find_vehicle(side_number)  # "HG 935", "935"...
         if veh is None:
             raise WalletError("unknown_vehicle", f"Vehicle '{side_number}' not found.")
         side_number = veh["side_number"]
-    minutes = trip_minutes(session, side_number)
+    minutes = trip_minutes(session, side_number, get_off)
     if ticket_id is None:
         ticket = pick_ticket(minutes, fare)
     else:
         ticket = next((t for t in catalog() if t["id"] == ticket_id), None)
         if ticket is None:
             raise WalletError("unknown_ticket", f"No ticket '{ticket_id}'. Call list_tickets.")
+        if minutes is not None:  # never shorter than the ride: same fare, the ticket pick_ticket would choose
+            enough = pick_ticket(minutes, "reduced" if ticket["id"].endswith("_u") else "full")
+            if ticket["valid_min"] < enough["valid_min"]:
+                ticket = enough
     if ticket["requires_vehicle_side_number"] and not side_number:
         raise WalletError("missing_side_number",
                           "Vehicle unknown. Call match_boarded_vehicle first, or ask the user to say when they board.")

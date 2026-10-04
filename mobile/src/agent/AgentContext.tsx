@@ -59,6 +59,7 @@ type AgentCtx = {
   lastUi: UiPayload | null;
   ui: UiData;
   setRouteResult: (r: RouteResult) => void;
+  sessionId: string | null;            // the voice session's id, for REST calls that must reach it
   pending: Pending | null;
   notice: string | null;               // short one-off message, e.g. "Nie kupiono biletu"
   trip: TripStatus | null;
@@ -100,6 +101,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [ui, setUi] = useState<UiData>({});
   const [lastUi, setLastUi] = useState<UiPayload | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [trip, setTrip] = useState<TripStatus | null>(null);
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -245,7 +247,9 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
       case "error":
         console.warn("[ws] server error:", m.message);
         break;
-      // "session": nothing to do
+      case "session":
+        setSessionId(m.id);
+        break;
     }
   }, [refreshWallet, waitForReply, stopWaiting]);
 
@@ -521,12 +525,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AgentCtx>(
     () => ({
-      backendUrl, setBackendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult,
+      backendUrl, setBackendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult, sessionId,
       pending, notice, trip, wallet, refreshWallet, headphones, setHeadphones, useGps, setUseGps, lang, setLang,
       sendText, startListening: () => startListening(), stopListening, cancelListening: () => cancelListening(),
       stop, confirmPending, cancelPending, extendPending, answerNow, replay,
     }),
-    [backendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult, pending, notice, trip,
+    [backendUrl, connection, state, transcript, replyText, lastUi, ui, setRouteResult, sessionId, pending, notice, trip,
       wallet, refreshWallet, headphones, useGps, lang, sendText, startListening, stopListening, cancelListening, stop,
       confirmPending, cancelPending, extendPending, answerNow, replay],
   );

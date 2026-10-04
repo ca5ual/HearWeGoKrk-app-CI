@@ -128,8 +128,8 @@ def get_balance(session) -> dict:
 
 
 def prepare_ticket(session, ticket_id: str | None = None, side_number: str | None = None,
-                   fare: str = "full") -> dict:
-    return wallet.prepare_ticket(session, ticket_id, side_number, fare)
+                   fare: str = "full", get_off: str | None = None) -> dict:
+    return wallet.prepare_ticket(session, ticket_id, side_number, fare, get_off)
 
 
 def confirm_pending_action(session, pending_action_id: str | None = None) -> dict:
@@ -202,7 +202,11 @@ TOOLS: dict[str, Tool] = {
         "a specific ticket; if covers_trip is then false, warn that it ends before the ride does.",
         _obj({"ticket_id": {"type": "string"}, "side_number": {"type": "string"},
               "fare": {"type": "string", "enum": ["full", "reduced"],
-                       "description": "'reduced' only if the user says they have a discount (ulga)."}}),
+                       "description": "'reduced' only if the user says they have a discount (ulga)."},
+              "get_off": {"type": "string",
+                          "description": "Stop where the user gets off, whenever they said it (e.g. 'Rondo "
+                                         "Mogilskie'): the ticket then covers the ride to that stop, not to "
+                                         "the end of the line."}}),
         ui_component="ticket_confirm"),
     "confirm_pending_action": Tool(
         confirm_pending_action,

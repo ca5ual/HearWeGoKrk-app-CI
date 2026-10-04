@@ -15,7 +15,7 @@ import { MIN_TOUCH, colors, font, radius, space } from "@/theme";
 const QUICK = ["Rynek", "AGH", "Dworzec Główny", "Kampus UJ"];
 
 export default function RouteSearch() {
-  const { backendUrl, setRouteResult, ui } = useAgent();
+  const { backendUrl, setRouteResult, sessionId, ui } = useAgent();
   const last = ui.route_results;
   const lastDest = last?.status === "ok" || last?.status === "no_route" ? last.destination : "";
   const [dest, setDest] = useState(lastDest);
@@ -36,7 +36,7 @@ export default function RouteSearch() {
     setBusy(true);
     setError(null);
     try {
-      setRouteResult(await api.route(backendUrl, to.trim(), lowFloor));
+      setRouteResult(await api.route(backendUrl, to.trim(), lowFloor, sessionId));
       router.push("/route/results");
     } catch {
       setError("Nie udało się połączyć z serwerem.");
