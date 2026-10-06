@@ -67,7 +67,7 @@ def _board(side="HG935"):
 def setup(sc) -> tuple[Session, str]:
     """Fresh state + session for one scenario; returns (session, utterance)."""
     sid, text = sc["id"], sc["utterance"]
-    headphones = not (sc.get("context", {}).get("headphones_connected") is False)
+    headphones = sc.get("context", {}).get("headphones_connected") is not False
     s = Session(lang=sc.get("lang", "pl"), headphones=headphones)
     _reset()
     if sid == "S6":

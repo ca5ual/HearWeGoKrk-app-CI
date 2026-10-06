@@ -47,4 +47,18 @@ jobs:
                 severity: 'CRITICAL,HIGH'
                 ignore-unfixed: true
                 exit-code: "1"
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v4
+            - name: Setup python
+              uses: checkout/setup-python@v5
+              with:
+                python-version: 3.12
+            - name: Install and run ruff
+              run: |
+                pip install ruff==0.14.6
+                ruff check . 
+
 
