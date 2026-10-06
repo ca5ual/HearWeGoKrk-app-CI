@@ -28,5 +28,5 @@ jobs:
             - name: Installation
               run: |
                 npm ci
-                npm tsc --noEmit
+                npx tsc --noEmit
                 npx expo lint 
