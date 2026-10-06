@@ -31,7 +31,7 @@ def fresh_demo():
 
 def say(text, sid=None, **kw):
     r = client.post("/agent/text", json={"text": text, "session_id": sid, **kw})
-    assert r.status_code == 202
+    assert r.status_code == 200
     return r.json()
 
 
