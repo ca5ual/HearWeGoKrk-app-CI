@@ -10,7 +10,7 @@ permissions:
     id-token: write
     
 env: 
-  IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}:${{ github.sha}}
+  IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}/hearwegokrk-backend:${{ github.sha}}
 
 jobs:
     lint:
